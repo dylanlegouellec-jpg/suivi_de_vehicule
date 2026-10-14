@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light dark; }
+html, body, #root { height: 100%; }
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
+}
+/* 16 px minimum : évite le zoom automatique d'iOS sur les champs */
+input, select, textarea { font-size: 16px; }
+
+@layer components {
+  .btn { @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 font-medium active:opacity-80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand; }
+  .btn-primary { @apply btn bg-brand text-white; }
+  .btn-secondary { @apply btn bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100; }
+  .btn-danger { @apply btn bg-red-600 text-white; }
+  .card { @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800; }
+  .field { @apply min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand; }
+  .label { @apply mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300; }
+}
