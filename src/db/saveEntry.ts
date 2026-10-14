@@ -11,7 +11,7 @@ export async function saveEntry(
 ): Promise<number> {
   return db.transaction('rw', db.entries, db.vehicles, db.documents, async () => {
     const payload = { ...data }
-    if (opts.document) payload.documentId = await db.documents.add(opts.document as DocumentRecord)
+    if (opts.document) payload.documentId = await db.documents.add({ ...opts.document, vehicleId: data.vehicleId } as DocumentRecord)
     let id = opts.id
     if (id != null) await db.entries.update(id, payload)
     else id = await db.entries.add(payload)

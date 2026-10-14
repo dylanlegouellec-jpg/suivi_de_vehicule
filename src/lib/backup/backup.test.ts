@@ -39,7 +39,7 @@ describe('sauvegarde JSON', () => {
     expect(back.entries).toEqual(snap.entries)
     expect(back.fuelLogs).toEqual(snap.fuelLogs)
     expect(back.reminderRules).toEqual(snap.reminderRules)
-    expect(await back.documents[0].blob.text()).toBe('%PDF-1')
+    expect(await back.documents[0].blob!.text()).toBe('%PDF-1')
     expect(await back.vehicles[0].photo!.text()).toBe('photo')
     expect(back.settings.map((s) => s.key)).toEqual(['activeVehicleId']) // lastBackupAt non sauvegardé
   })
@@ -82,7 +82,7 @@ describe('fusion', () => {
     const r = mergeSnapshots(existing, incoming)
     expect(r.add.vehicles.map((v) => [v.id, v.name])).toEqual([[2, 'Moto']])
     expect(r.add.entries.map((e) => [e.id, e.vehicleId, e.documentId])).toEqual([[2, 2, 1], [3, 1, null]])
-    expect(r.add.documents.map((d) => d.id)).toEqual([1])
+    expect(r.add.documents.map((d) => [d.id, d.vehicleId])).toEqual([[1, 2]])
     expect(r.add.fuelLogs[0].vehicleId).toBe(2)
     expect(r.add.reminderRules[0].vehicleId).toBe(2)
     expect(r.summary).toMatchObject({ vehicles: 1, entries: 2, fuelLogs: 1, reminderRules: 1, skipped: 0 })

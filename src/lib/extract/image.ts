@@ -75,3 +75,21 @@ export function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/jpeg', qua
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Échec de la conversion de l'image."))), type, quality),
   )
 }
+
+/** Réduit une image (côté max) et la recompresse en JPEG ; en cas d'échec, renvoie l'original. */
+export async function downscaleToJpeg(blob: Blob, max = 1200, quality = 0.82): Promise<Blob> {
+  try {
+    const bmp = await loadBitmap(blob)
+    const w = 'naturalWidth' in bmp ? bmp.naturalWidth : bmp.width
+    const h = 'naturalHeight' in bmp ? bmp.naturalHeight : bmp.height
+    const { width, height } = fitSize(w, h, max)
+    const canvas = makeCanvas(width, height)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return blob
+    ctx.drawImage(bmp, 0, 0, width, height)
+    if ('close' in bmp) bmp.close()
+    return await canvasToBlob(canvas, 'image/jpeg', quality)
+  } catch {
+    return blob
+  }
+}

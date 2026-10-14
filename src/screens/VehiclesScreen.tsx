@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from 'react'
 import { db } from '../db/db'
+import { deleteVehicle } from '../db/mutations'
 import { createDefaultRules } from '../db/reminders'
 import { FUEL_LABELS, type Fuel, type Vehicle } from '../db/schema'
 import { useVehicles } from '../vehicleContext'
 import EmptyState from '../components/EmptyState'
 import { errorMessage } from '../lib/storage'
+import { downscaleToJpeg } from '../lib/extract/image'
 import { formatKm } from '../lib/format'
 
-type Draft = Omit<Vehicle, 'id' | 'createdAt'>
+type Draft = Omit<Vehicle, 'id' | 'createdAt' | 'uid' | 'updatedAt' | 'dirty' | 'rw' | 'photoSyncedVersion'>
 
 const emptyDraft = (): Draft => ({
   name: '', brand: '', model: '', year: null, plate: '', fuel: 'essence',
-  firstRegistration: null, mileage: null, photo: null,
+  firstRegistration: null, mileage: null, photo: null, photoVersion: null,
 })
 
 const toNum = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -47,8 +49,8 @@ export default function VehiclesScreen({ onBack }: { onBack: () => void }) {
                 </p>
               </div>
               <button className="btn-secondary" onClick={() => {
-                const { id, createdAt, ...draft } = v
-                void createdAt
+                const { id, createdAt, uid, updatedAt, dirty, rw, photoSyncedVersion, ...draft } = v
+                void createdAt; void uid; void updatedAt; void dirty; void rw; void photoSyncedVersion
                 setEditing({ id, draft })
               }}>Modifier</button>
             </li>
@@ -98,15 +100,7 @@ function VehicleForm({ initial, onClose, onSaved }: {
     if (initial.id == null) return
     if (!window.confirm('Supprimer ce véhicule et toutes ses données (entrées, pleins, rappels) ?')) return
     const id = initial.id
-    await db.transaction('rw', [db.vehicles, db.entries, db.fuelLogs, db.reminderRules, db.documents], async () => {
-      const docIds = (await db.entries.where('vehicleId').equals(id).toArray())
-        .map((e) => e.documentId).filter((x): x is number => x != null)
-      await db.documents.bulkDelete(docIds)
-      await db.entries.where('vehicleId').equals(id).delete()
-      await db.fuelLogs.where('vehicleId').equals(id).delete()
-      await db.reminderRules.where('vehicleId').equals(id).delete()
-      await db.vehicles.delete(id)
-    })
+    await deleteVehicle(id)
     onClose()
   }
 
@@ -138,8 +132,11 @@ function VehicleForm({ initial, onClose, onSaved }: {
       <div><label className="label" htmlFor="v-km">Kilométrage actuel</label>
         <input id="v-km" className="field" type="number" inputMode="numeric" min={0} value={d.mileage ?? ''} onChange={(e) => set('mileage', toNum(e.target.value))} /></div>
       <div><label className="label" htmlFor="v-photo">Photo (optionnelle)</label>
-        <input id="v-photo" className="field py-2" type="file" accept="image/*" onChange={(e) => set('photo', e.target.files?.[0] ?? d.photo)} />
-        {d.photo && <button type="button" className="mt-1 text-sm text-red-600 underline" onClick={() => set('photo', null)}>Retirer la photo</button>}</div>
+        <input id="v-photo" className="field py-2" type="file" accept="image/*" onChange={async (e) => {
+          const f = e.target.files?.[0]
+          if (f) { const small = await downscaleToJpeg(f); setD((p) => ({ ...p, photo: small, photoVersion: Date.now() })) }
+        }} />
+        {d.photo && <button type="button" className="mt-1 text-sm text-red-600 underline" onClick={() => setD((p) => ({ ...p, photo: null, photoVersion: null }))}>Retirer la photo</button>}</div>
 
       {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
 

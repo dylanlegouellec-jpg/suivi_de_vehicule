@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import { saveFuelLog } from '../db/saveEntry'
+import { deleteFuelLog } from '../db/mutations'
 import type { FuelLog } from '../db/schema'
 import { formatEuro, formatKm, parseDecimal, todayIso } from '../lib/format'
 import { errorMessage } from '../lib/storage'
@@ -75,7 +76,7 @@ export default function FuelForm({ log, onClose, onSaved }: { log?: FuelLog; onC
 
   const remove = async () => {
     if (log?.id == null || !window.confirm('Supprimer ce plein ?')) return
-    await db.fuelLogs.delete(log.id)
+    await deleteFuelLog(log.id)
     onSaved()
   }
 

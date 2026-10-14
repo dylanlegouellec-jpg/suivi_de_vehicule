@@ -19,7 +19,7 @@ export interface BackupFile {
   exportedAt: string
   data: {
     vehicles: (Omit<Vehicle, 'photo'> & { photo: EncodedBlob | null })[]
-    documents: (Omit<DocumentRecord, 'blob'> & { blob: EncodedBlob })[]
+    documents: (Omit<DocumentRecord, 'blob'> & { blob: EncodedBlob | null })[]
     entries: Entry[]
     fuelLogs: FuelLog[]
     reminderRules: ReminderRule[]
@@ -29,6 +29,9 @@ export interface BackupFile {
 
 /** Réglages locaux à ne pas sauvegarder (dépendent de l'appareil). */
 export const EPHEMERAL_SETTINGS = ['lastBackupAt']
+export const EPHEMERAL_SETTING_PREFIXES = ['sync.', 'auth.']
+export const isEphemeralSetting = (key: string) =>
+  EPHEMERAL_SETTINGS.includes(key) || EPHEMERAL_SETTING_PREFIXES.some((p) => key.startsWith(p))
 
 export async function encodeBlob(b: Blob): Promise<EncodedBlob> {
   const bytes = new Uint8Array(await b.arrayBuffer())
@@ -52,11 +55,11 @@ export async function snapshotToBackup(s: Snapshot, now = new Date()): Promise<B
     exportedAt: now.toISOString(),
     data: {
       vehicles: await Promise.all(s.vehicles.map(async (v) => ({ ...v, photo: v.photo ? await encodeBlob(v.photo) : null }))),
-      documents: await Promise.all(s.documents.map(async (d) => ({ ...d, blob: await encodeBlob(d.blob) }))),
+      documents: await Promise.all(s.documents.map(async (d) => ({ ...d, blob: d.blob ? await encodeBlob(d.blob) : null }))),
       entries: s.entries,
       fuelLogs: s.fuelLogs,
       reminderRules: s.reminderRules,
-      settings: s.settings.filter((x) => !EPHEMERAL_SETTINGS.includes(x.key)),
+      settings: s.settings.filter((x) => !isEphemeralSetting(x.key)),
     },
   }
 }
@@ -98,9 +101,9 @@ export function parseBackup(text: string): Snapshot {
       if (v.photo != null && !isBlobObj(v.photo)) throw new BackupError('Sauvegarde corrompue : photo de véhicule invalide.')
       return { ...v, photo: v.photo ? decodeBlob(v.photo as EncodedBlob) : null } as unknown as Vehicle
     })
-    const documents = rows('documents', ['id', 'blob']).map((x) => {
-      if (!isBlobObj(x.blob)) throw new BackupError('Sauvegarde corrompue : document invalide.')
-      return { ...x, blob: decodeBlob(x.blob as EncodedBlob) } as unknown as DocumentRecord
+    const documents = rows('documents', ['id']).map((x) => {
+      if (x.blob != null && !isBlobObj(x.blob)) throw new BackupError('Sauvegarde corrompue : document invalide.')
+      return { ...x, blob: x.blob ? decodeBlob(x.blob as EncodedBlob) : null } as unknown as DocumentRecord
     })
     return {
       vehicles,
@@ -161,7 +164,7 @@ export function mergeSnapshots(existing: Snapshot, incoming: Snapshot): MergeRes
     seenEntries.add(entryKey(cand))
     let documentId: number | null = null
     const doc = e.documentId != null ? docs.get(e.documentId) : undefined
-    if (doc) { documentId = nextDoc++; add.documents.push({ ...doc, id: documentId }) }
+    if (doc) { documentId = nextDoc++; add.documents.push({ ...doc, id: documentId, vehicleId }) }
     add.entries.push({ ...cand, id: nextEntry++, documentId })
   }
 

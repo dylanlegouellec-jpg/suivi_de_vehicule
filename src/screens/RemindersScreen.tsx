@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { db } from '../db/db'
 import { createDefaultRules } from '../db/reminders'
+import { deleteRule } from '../db/mutations'
 import type { ReminderRule, RuleType } from '../db/schema'
 import EmptyState from '../components/EmptyState'
 import ReminderCard from '../components/ReminderCard'
@@ -100,7 +101,7 @@ function RuleDetail({ item, onBack, onEdit, onDone }: {
 
   const remove = async () => {
     if (!window.confirm('Supprimer ce rappel ? Vos entrées ne sont pas affectées.')) return
-    await db.reminderRules.delete(rule.id!)
+    await deleteRule(rule.id!)
     onBack()
   }
 
@@ -179,7 +180,7 @@ function RuleForm({ rule, onClose }: { rule?: ReminderRule; onClose: () => void 
 
   const remove = async () => {
     if (rule?.id == null || !window.confirm('Supprimer ce rappel ?')) return
-    await db.reminderRules.delete(rule.id)
+    await deleteRule(rule.id)
     onClose()
   }
 

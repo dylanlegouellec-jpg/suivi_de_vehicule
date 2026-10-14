@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
+import { deleteEntry } from '../db/mutations'
 import { ENTRY_TYPE_LABELS } from '../lib/entryTypes'
 import { formatDate, formatEuro, formatKm } from '../lib/format'
 import { errorMessage } from '../lib/storage'
@@ -13,7 +14,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!doc) { setUrl(null); return }
+    if (!doc?.blob) { setUrl(null); return }
     const u = URL.createObjectURL(doc.blob)
     setUrl(u)
     return () => URL.revokeObjectURL(u)
@@ -25,10 +26,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
   const remove = async () => {
     if (!window.confirm('Supprimer définitivement cette entrée et sa pièce jointe ?')) return
     try {
-      await db.transaction('rw', db.entries, db.documents, async () => {
-        if (entry.documentId != null) await db.documents.delete(entry.documentId)
-        await db.entries.delete(id)
-      })
+      await deleteEntry(id)
       onBack()
     } catch (e) { setError(errorMessage(e)) }
   }
