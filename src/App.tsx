@@ -57,7 +57,7 @@ export default function App() {
     />
   )
   else if (showVehicles) content = <VehiclesScreen onBack={() => setShowVehicles(false)} />
-  else if (tab === 'home') content = <HomeScreen onManageVehicles={() => setShowVehicles(true)} onOpenReminders={() => setShowReminders(true)} />
+  else if (tab === 'home') content = <HomeScreen onManageVehicles={() => setShowVehicles(true)} onOpenReminders={() => setShowReminders(true)} onOpenBackup={() => go('settings')} />
   else if (tab === 'history') content = <HistoryScreen onOpen={setEntryId} onAdd={() => setForm({})} />
   else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} onFiles={setImportFiles} onFuel={() => setFuel({ startNew: true })} />
   else if (tab === 'stats') content = <StatsScreen onOpenFuel={() => setFuel({ startNew: false })} />

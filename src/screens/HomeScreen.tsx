@@ -4,11 +4,20 @@ import { FUEL_LABELS } from '../db/schema'
 import { formatKm } from '../lib/format'
 import ReminderCard from '../components/ReminderCard'
 import { groupReminders } from '../lib/reminders/compute'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '../db/db'
+import { getLastBackupAt } from '../db/backup'
+import { backupDue } from '../lib/backup/format'
 import { useReminders } from '../lib/reminders/useReminders'
 
-export default function HomeScreen({ onManageVehicles, onOpenReminders }: { onManageVehicles: () => void; onOpenReminders: () => void }) {
+export default function HomeScreen({ onManageVehicles, onOpenReminders, onOpenBackup }: { onManageVehicles: () => void; onOpenReminders: () => void; onOpenBackup: () => void }) {
   const { vehicles, active } = useVehicles()
   const reminders = useReminders()
+  const needBackup = useLiveQuery(async () => {
+    const [last, vs, hasEntries] = await Promise.all([getLastBackupAt(), db.vehicles.toArray(), db.entries.count()])
+    if (!vs.length && !hasEntries) return false
+    return backupDue({ lastBackupAt: last, firstDataAt: vs.length ? Math.min(...vs.map((v) => v.createdAt)) : null, now: Date.now() })
+  }, [])
   const groups = reminders ? groupReminders(reminders) : null
   const urgent = groups ? [...groups.overdue, ...groups.soon] : []
   if (!vehicles) return <p role="status">Chargement…</p>
@@ -20,6 +29,12 @@ export default function HomeScreen({ onManageVehicles, onOpenReminders }: { onMa
     )
   return (
     <div className="space-y-3">
+      {needBackup && (
+        <button className="w-full rounded-2xl bg-amber-100 p-4 text-left text-amber-900 ring-1 ring-amber-400" onClick={onOpenBackup}>
+          <strong>💾 Sauvegarde recommandée</strong>
+          <span className="block text-sm">Aucune sauvegarde depuis plus de 30 jours. Touchez pour exporter vos données.</span>
+        </button>
+      )}
       <section className="card">
         <h2 className="text-lg font-semibold">{active.name}</h2>
         <p className="text-slate-600 dark:text-slate-400">

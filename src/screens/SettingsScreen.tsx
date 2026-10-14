@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getStorageStatus, requestPersistence, type StorageStatus } from '../lib/storage'
 import { formatNumber } from '../lib/format'
+import BackupSection from './BackupSection'
+
+const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
+const isStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches
 
 export default function SettingsScreen({ onManageVehicles, onOpenReminders }: { onManageVehicles: () => void; onOpenReminders: () => void }) {
   const [status, setStatus] = useState<StorageStatus | null>(null)
@@ -21,7 +25,7 @@ export default function SettingsScreen({ onManageVehicles, onOpenReminders }: { 
         <h2 className="font-semibold">Stockage et sauvegarde</h2>
         <p role="alert" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
           ⚠️ Vos données restent uniquement sur cet appareil. iOS peut vider le stockage des sites peu utilisés :
-          exportez régulièrement une sauvegarde (disponible en phase 6).
+          exportez régulièrement une sauvegarde ci-dessous.
         </p>
         <p className="text-sm">
           Stockage persistant : <strong>{status ? (status.persisted ? 'accordé' : 'non garanti') : '…'}</strong>
@@ -35,6 +39,13 @@ export default function SettingsScreen({ onManageVehicles, onOpenReminders }: { 
           </button>
         )}
       </section>
+      <BackupSection />
+      {isIos && !isStandalone && (
+        <section className="card text-sm">
+          <h2 className="font-semibold">Installer sur l'écran d'accueil</h2>
+          <p>Dans Safari, touchez <strong>Partager</strong> puis <strong>Sur l'écran d'accueil</strong> : l'app s'ouvrira en plein écran et fonctionnera hors ligne.</p>
+        </section>
+      )}
     </div>
   )
 }
