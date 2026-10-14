@@ -21,13 +21,22 @@ npm run preview    # sert le build (http://localhost:4173), nécessaire pour tes
 `npm run dev` et `npm run build` copient d'abord les ressources OCR (moteur Tesseract et langue française)
 dans `public/tesseract/` (dossier généré, non versionné), pour que l'OCR n'appelle aucun CDN.
 
-## Déploiement sur Vercel (gratuit)
+## Déploiement sur Cloudflare (gratuit)
+
+Le fichier `wrangler.jsonc` publie le dossier `dist/` comme application monopage (`single-page-application`).
 
 1. Poussez le dépôt sur GitHub.
-2. Sur [vercel.com](https://vercel.com) : **Add New → Project**, importez le dépôt.
-3. Les réglages sont détectés (Vite) : *Build Command* `npm run build`, *Output Directory* `dist`.
-   `vercel.json` ajoute la réécriture vers `index.html`.
-4. Déployez. Le HTTPS est fourni par Vercel : il est **obligatoire** pour le service worker et l'installation.
+2. Sur le [tableau de bord Cloudflare](https://dash.cloudflare.com) : **Workers & Pages → Create → Import a repository**,
+   puis choisissez le dépôt.
+3. Réglages : *Build command* `npm run build`, *Deploy command* `npx wrangler deploy` (valeur par défaut).
+   Le nom du Worker doit correspondre à `name` dans `wrangler.jsonc` (`suivi-de-vehicule`).
+4. Déployez. Le site est servi en HTTPS sur `https://suivi-de-vehicule.<votre-compte>.workers.dev` ;
+   le HTTPS est **obligatoire** pour le service worker et l'installation.
+
+En ligne de commande : `npm run build && npx wrangler deploy` (après `npx wrangler login`).
+
+> Changer d'adresse (ou d'hébergeur) change l'origine : IndexedDB repart de zéro. Exportez une sauvegarde
+> depuis l'ancienne adresse (Réglages) et importez-la sur la nouvelle, puis réinstallez l'icône sur l'iPhone.
 
 ## Installer sur l'écran d'accueil de l'iPhone
 
