@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getStorageStatus, requestPersistence, type StorageStatus } from '../lib/storage'
 import { formatNumber } from '../lib/format'
 
-export default function SettingsScreen({ onManageVehicles }: { onManageVehicles: () => void }) {
+export default function SettingsScreen({ onManageVehicles, onOpenReminders }: { onManageVehicles: () => void; onOpenReminders: () => void }) {
   const [status, setStatus] = useState<StorageStatus | null>(null)
   const refresh = () => getStorageStatus().then(setStatus)
   useEffect(() => { void refresh() }, [])
@@ -12,6 +12,10 @@ export default function SettingsScreen({ onManageVehicles }: { onManageVehicles:
       <section className="card">
         <h2 className="font-semibold">Véhicules</h2>
         <button className="btn-secondary mt-2 w-full" onClick={onManageVehicles}>Gérer mes véhicules</button>
+      </section>
+      <section className="card">
+        <h2 className="font-semibold">Rappels</h2>
+        <button className="btn-secondary mt-2 w-full" onClick={onOpenReminders}>Gérer les rappels et intervalles</button>
       </section>
       <section className="card space-y-2">
         <h2 className="font-semibold">Stockage et sauvegarde</h2>

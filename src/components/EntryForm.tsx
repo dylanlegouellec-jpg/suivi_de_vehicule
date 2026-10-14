@@ -8,14 +8,15 @@ import { formatDate, formatEuro, parseDecimal, todayIso } from '../lib/format'
 import { errorMessage } from '../lib/storage'
 import { useVehicles } from '../vehicleContext'
 
-export default function EntryForm({ entry, onClose, onSaved }: {
+export default function EntryForm({ entry, defaults, onClose, onSaved }: {
   entry?: Entry
+  defaults?: { vehicleId?: number; type?: EntryType }
   onClose: () => void
   onSaved: (id: number) => void
 }) {
   const { vehicles, active } = useVehicles()
-  const [vehicleId, setVehicleId] = useState<number | null>(entry?.vehicleId ?? active?.id ?? null)
-  const [type, setType] = useState<EntryType>(entry?.type ?? 'vidange')
+  const [vehicleId, setVehicleId] = useState<number | null>(entry?.vehicleId ?? defaults?.vehicleId ?? active?.id ?? null)
+  const [type, setType] = useState<EntryType>(entry?.type ?? defaults?.type ?? 'vidange')
   const [date, setDate] = useState(entry?.date ?? todayIso())
   const [amount, setAmount] = useState(entry?.amount != null ? String(entry.amount).replace('.', ',') : '')
   const [km, setKm] = useState(entry?.km != null ? String(entry.km) : '')

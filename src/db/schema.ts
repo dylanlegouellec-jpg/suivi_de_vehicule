@@ -57,7 +57,12 @@ export interface ReminderRule {
   label: string
   everyMonths: number | null
   everyKm: number | null
+  /** Dernière fois connue (utile sans historique, ou pour les rappels personnalisés). */
+  baseDate?: string | null
+  baseKm?: number | null
 }
+
+export type RuleType = EntryType | 'personnalise'
 
 export interface SettingRecord {
   key: string

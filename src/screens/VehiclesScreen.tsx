@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { db } from '../db/db'
+import { createDefaultRules } from '../db/reminders'
 import { FUEL_LABELS, type Fuel, type Vehicle } from '../db/schema'
 import { useVehicles } from '../vehicleContext'
 import EmptyState from '../components/EmptyState'
@@ -82,7 +83,10 @@ function VehicleForm({ initial, onClose, onSaved }: {
       const clean = { ...d, name: d.name.trim(), plate: d.plate.trim().toUpperCase() }
       let id = initial.id
       if (id != null) await db.vehicles.update(id, clean)
-      else id = await db.vehicles.add({ ...clean, createdAt: Date.now() })
+      else {
+        id = await db.vehicles.add({ ...clean, createdAt: Date.now() })
+        await createDefaultRules(id)
+      }
       onSaved(id)
     } catch (err) {
       setError(errorMessage(err))

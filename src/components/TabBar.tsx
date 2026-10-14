@@ -8,7 +8,7 @@ const ITEMS: { id: Tab; label: string; icon: string }[] = [
   { id: 'settings', label: 'Réglages', icon: '⚙️' },
 ]
 
-export default function TabBar({ current, onChange }: { current: Tab; onChange: (t: Tab) => void }) {
+export default function TabBar({ current, onChange, badges = {} }: { current: Tab; onChange: (t: Tab) => void; badges?: Partial<Record<Tab, number>> }) {
   return (
     <nav
       aria-label="Navigation principale"
@@ -30,10 +30,17 @@ export default function TabBar({ current, onChange }: { current: Tab; onChange: 
                 {it.icon}
               </span>
             ) : (
-              <span aria-hidden className="text-xl">{it.icon}</span>
+              <span aria-hidden className="relative text-xl">
+                {it.icon}
+                {!!badges[it.id] && (
+                  <span className="absolute -right-3 -top-1 min-w-[18px] rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-[18px] text-white">
+                    {badges[it.id]}
+                  </span>
+                )}
+              </span>
             )}
             <span className={isActive ? 'font-semibold text-brand' : 'text-slate-600 dark:text-slate-400'}>
-              {it.label}
+              {it.label}{badges[it.id] ? <span className="sr-only">, {badges[it.id]} à faire</span> : null}
             </span>
           </button>
         )
