@@ -75,7 +75,7 @@ export default function App() {
     <VehicleProvider>
       <div className="mx-auto flex h-full max-w-xl flex-col">
         <Header onManageVehicles={() => setShowVehicles(true)} />
-        <main className="flex-1 overflow-y-auto px-4 pb-6 pt-3">{content}</main>
+        <main className="relative z-0 flex-1 overflow-y-auto px-4 pb-10 pt-3">{content}</main>
         <TabBar current={tab} onChange={go} badges={{ home: badge }} />
       </div>
     </VehicleProvider>

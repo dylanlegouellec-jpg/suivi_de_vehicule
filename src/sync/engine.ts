@@ -104,7 +104,11 @@ export class SyncEngine {
     for (const v of (await db.vehicles.where('dirty').equals(1).toArray()).slice(0, room())) {
       add({
         kind: 'vehicle', uid: v.uid!, vehicleUid: v.uid!, updatedAt: v.updatedAt!, deleted: false,
-        data: { ...pick(v, ['name', 'brand', 'model', 'year', 'plate', 'fuel', 'firstRegistration', 'mileage', 'createdAt']), hasPhoto: !!v.photo || (v.photoVersion != null), photoVersion: v.photoVersion ?? null },
+        data: {
+          ...pick(v, ['name', 'brand', 'model', 'year', 'plate', 'fuel', 'firstRegistration', 'mileage', 'createdAt', 'vin']),
+          hasPhoto: !!v.photo || v.photoVersion != null, photoVersion: v.photoVersion ?? null,
+          hasRegistration: !!v.registrationPhoto || v.registrationVersion != null, registrationVersion: v.registrationVersion ?? null,
+        },
       }, { kind: 'vehicle', uid: v.uid!, updatedAt: v.updatedAt! })
     }
     for (const d of room() > 0 ? await db.documents.where('dirty').equals(1).toArray() : []) {
@@ -183,20 +187,25 @@ export class SyncEngine {
       if (c.deleted) { if (local) await this.purgeVehicle(local.id!); return true }
       const d = c.data as Record<string, unknown>
       const fields = {
-        ...pick(d, ['name', 'brand', 'model', 'year', 'plate', 'fuel', 'firstRegistration', 'mileage', 'createdAt']),
+        ...pick(d, ['name', 'brand', 'model', 'year', 'plate', 'fuel', 'firstRegistration', 'mileage', 'createdAt', 'vin']),
       } as Record<string, unknown>
-      const remotePhotoVersion = (d.hasPhoto ? (d.photoVersion as number | null) ?? 0 : null) as number | null
+      const remote = {
+        photo: (d.hasPhoto ? (d.photoVersion as number | null) ?? 0 : null) as number | null,
+        registration: (d.hasRegistration ? (d.registrationVersion as number | null) ?? 0 : null) as number | null,
+      }
       if (!local) {
         await db.vehicles.add({
           name: '', brand: '', model: '', year: null, plate: '', fuel: 'essence', firstRegistration: null, mileage: null, createdAt: c.updatedAt,
-          ...fields, uid: c.uid, updatedAt: c.updatedAt, ...clean(), photo: null, photoVersion: remotePhotoVersion, photoSyncedVersion: null,
+          ...fields, uid: c.uid, updatedAt: c.updatedAt, ...clean(),
+          photo: null, photoVersion: remote.photo, photoSyncedVersion: null,
+          registrationPhoto: null, registrationVersion: remote.registration, registrationSyncedVersion: null,
         } as never)
       } else if (c.updatedAt >= (local.updatedAt ?? 0)) {
-        const photoChanged = (local.photoVersion ?? null) !== remotePhotoVersion
-        await db.vehicles.update(local.id!, {
-          ...fields, updatedAt: c.updatedAt, ...clean(),
-          ...(photoChanged ? { photoVersion: remotePhotoVersion, photo: null, photoSyncedVersion: null } : {}),
-        } as never)
+        // Une image qui change ou disparaît côté serveur : on efface la copie locale, elle sera retéléchargée.
+        const imageChanges: Record<string, unknown> = {}
+        if ((local.photoVersion ?? null) !== remote.photo) Object.assign(imageChanges, { photoVersion: remote.photo, photo: null, photoSyncedVersion: null })
+        if ((local.registrationVersion ?? null) !== remote.registration) Object.assign(imageChanges, { registrationVersion: remote.registration, registrationPhoto: null, registrationSyncedVersion: null })
+        await db.vehicles.update(local.id!, { ...fields, updatedAt: c.updatedAt, ...clean(), ...imageChanges } as never)
       }
       return true
     }
@@ -312,6 +321,8 @@ export class SyncEngine {
       }
     }
 
+    // Téléchargements limités par synchronisation (le reste à la demande ou à la suivante)
+    let budget = 10
     // Envois
     for (const d of await db.documents.filter((x) => !!x.blob && !x.blobSynced).toArray()) {
       const vUid = d.vehicleId != null ? vmap.get(d.vehicleId) : undefined
@@ -322,22 +333,32 @@ export class SyncEngine {
         report.blobsUp++
       })
     }
-    for (const v of await db.vehicles.filter((x) => !!x.photo && x.photoVersion != null && x.photoVersion !== x.photoSyncedVersion).toArray()) {
-      if ((await this.roleOf(v.uid!)) === 'viewer') continue
-      await tryDo(async () => {
-        await this.api.putBlob(`/api/blobs/${v.uid}/${v.uid}-photo`, v.photo!)
-        await this.quiet('vehicles', v.id!, { photoSyncedVersion: v.photoVersion })
-        report.blobsUp++
-      })
-    }
-    // Téléchargements (quelques-uns par synchronisation ; le reste à la demande)
-    let budget = 10
-    for (const v of await db.vehicles.filter((x) => !x.photo && x.photoVersion != null).toArray()) {
-      if (budget-- <= 0) break
-      await tryDo(async () => {
-        const blob = await this.api.getBlob(`/api/blobs/${v.uid}/${v.uid}-photo`)
-        if (blob) { await this.quiet('vehicles', v.id!, { photo: blob, photoSyncedVersion: v.photoVersion }); report.blobsDown++ }
-      })
+    // Images du véhicule : photo (tous les membres) et carte grise (propriétaire uniquement).
+    const SLOTS = [
+      { blob: 'photo', version: 'photoVersion', synced: 'photoSyncedVersion', suffix: 'photo', ownerOnly: false },
+      { blob: 'registrationPhoto', version: 'registrationVersion', synced: 'registrationSyncedVersion', suffix: 'carte', ownerOnly: true },
+    ] as const
+    for (const slot of SLOTS) {
+      for (const v of await db.vehicles.toArray()) {
+        const rec = v as unknown as Record<string, unknown>
+        const version = rec[slot.version] as number | null | undefined
+        const image = rec[slot.blob] as Blob | null | undefined
+        const role = await this.roleOf(v.uid!)
+        if (version == null || (slot.ownerOnly ? role !== 'owner' : role === 'viewer' && !!image)) continue
+        const path = `/api/blobs/${v.uid}/${v.uid}-${slot.suffix}`
+        if (image && version !== rec[slot.synced]) {
+          await tryDo(async () => {
+            await this.api.putBlob(path, image)
+            await this.quiet('vehicles', v.id!, { [slot.synced]: version })
+            report.blobsUp++
+          })
+        } else if (!image && budget-- > 0) {
+          await tryDo(async () => {
+            const blob = await this.api.getBlob(path)
+            if (blob) { await this.quiet('vehicles', v.id!, { [slot.blob]: blob, [slot.synced]: version }); report.blobsDown++ }
+          })
+        }
+      }
     }
     for (const d of await db.documents.filter((x) => !x.blob && !!x.blobSynced).toArray()) {
       if (budget-- <= 0) break

@@ -10,6 +10,17 @@ body {
   -webkit-text-size-adjust: 100%;
   overscroll-behavior-y: none;
 }
+/* iOS : les champs date ont une largeur propre et débordent du formulaire sans ces règles */
+input[type='date'], input[type='time'] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+input[type='date']::-webkit-date-and-time-value { text-align: left; }
 /* 16 px minimum : évite le zoom automatique d'iOS sur les champs */
 input, select, textarea { font-size: 16px; }
 

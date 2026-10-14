@@ -8,6 +8,7 @@ import { mimeOf, type ExtractResult } from '../lib/extract'
 import { formatDate, formatEuro, parseDecimal, todayIso } from '../lib/format'
 import { LOW_CONFIDENCE, parseInvoice, type Field, type ParsedInvoice } from '../lib/parsing/parseInvoice'
 import { errorMessage } from '../lib/storage'
+import { formatPlate } from '../lib/plate'
 import { useVehicles } from '../vehicleContext'
 
 const normPlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '')
@@ -52,7 +53,7 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
   const [ht, setHt] = useState(str(parsed.amountHT.value))
   const [vat, setVat] = useState(str(parsed.vat.value))
   const [km, setKm] = useState(parsed.km.value != null ? String(parsed.km.value) : '')
-  const [plate, setPlate] = useState(parsed.plate.value ?? '')
+  const [plate, setPlate] = useState(formatPlate(parsed.plate.value ?? ''))
   const [garage, setGarage] = useState(parsed.garage.value ?? '')
   const [notes, setNotes] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
@@ -181,7 +182,7 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
             <input id="r-km" className="field" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value)} />
           </Row>
           <Row label="Plaque détectée" htmlFor="r-plate" low={plate !== '' && isLow(parsed.plate)}>
-            <input id="r-plate" className="field uppercase" value={plate} onChange={(e) => setPlate(e.target.value)} autoCapitalize="characters" />
+            <input id="r-plate" className="field uppercase" value={plate} onChange={(e) => setPlate(formatPlate(e.target.value))} autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
             {plateMismatch && <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">⚠️ Cette plaque ne correspond pas au véhicule sélectionné.</p>}
           </Row>
           <Row label="Garage" htmlFor="r-garage" low={isLow(parsed.garage)}>

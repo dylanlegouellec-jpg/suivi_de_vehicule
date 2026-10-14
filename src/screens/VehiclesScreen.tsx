@@ -6,14 +6,19 @@ import { FUEL_LABELS, type Fuel, type Vehicle } from '../db/schema'
 import { useVehicles } from '../vehicleContext'
 import EmptyState from '../components/EmptyState'
 import { errorMessage } from '../lib/storage'
+import { formatPlate } from '../lib/plate'
+import RegistrationScan from '../components/RegistrationScan'
+import type { ParsedRegistration } from '../lib/parsing/parseRegistration'
+import { LOW_CONFIDENCE } from '../lib/parsing/parseInvoice'
 import { downscaleToJpeg } from '../lib/extract/image'
 import { formatKm } from '../lib/format'
 
-type Draft = Omit<Vehicle, 'id' | 'createdAt' | 'uid' | 'updatedAt' | 'dirty' | 'rw' | 'photoSyncedVersion'>
+type Draft = Omit<Vehicle, 'id' | 'createdAt' | 'uid' | 'updatedAt' | 'dirty' | 'rw' | 'photoSyncedVersion' | 'registrationSyncedVersion'>
 
 const emptyDraft = (): Draft => ({
   name: '', brand: '', model: '', year: null, plate: '', fuel: 'essence',
   firstRegistration: null, mileage: null, photo: null, photoVersion: null,
+  vin: '', registrationPhoto: null, registrationVersion: null,
 })
 
 const toNum = (s: string) => (s.trim() === '' ? null : Number(s))
@@ -52,8 +57,8 @@ export default function VehiclesScreen({ onBack, onShare }: { onBack: () => void
               <div className="flex flex-col gap-1">
               <button className="btn-secondary" onClick={() => onShare(v.id!)}>Partager</button>
               {roleOf(v.id) !== 'viewer' && <button className="btn-secondary" onClick={() => {
-                const { id, createdAt, uid, updatedAt, dirty, rw, photoSyncedVersion, ...draft } = v
-                void createdAt; void uid; void updatedAt; void dirty; void rw; void photoSyncedVersion
+                const { id, createdAt, uid, updatedAt, dirty, rw, photoSyncedVersion, registrationSyncedVersion, ...draft } = v
+                void createdAt; void uid; void updatedAt; void dirty; void rw; void photoSyncedVersion; void registrationSyncedVersion
                 setEditing({ id, draft })
               }}>Modifier</button>}
               </div>
@@ -81,13 +86,43 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
   const [busy, setBusy] = useState(false)
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }))
 
+  /** Pré-remplit la fiche depuis la carte grise, sans écraser ce qui est déjà saisi. Renvoie un résumé à afficher. */
+  const applyRegistration = (r: ParsedRegistration): string => {
+    const filled: string[] = []
+    const doubtful: string[] = []
+    const next: Draft = { ...d }
+    const take = <K extends keyof Draft>(key: K, value: Draft[K] | null, label: string, conf: number, force = false) => {
+      if (value == null || value === '') return
+      const empty = next[key] == null || next[key] === ''
+      if (empty || force) {
+        next[key] = value as Draft[K]
+        filled.push(label)
+        if (conf < LOW_CONFIDENCE) doubtful.push(label)
+      }
+    }
+    take('brand', r.brand.value, 'marque', r.brand.confidence)
+    take('model', r.model.value, 'modèle', r.model.confidence)
+    take('plate', r.plate.value, 'plaque', r.plate.confidence)
+    take('year', r.year.value, 'année', r.year.confidence)
+    take('firstRegistration', r.firstRegistration.value, 'date de mise en circulation', r.firstRegistration.confidence)
+    take('vin', r.vin.value, 'VIN', r.vin.confidence)
+    take('fuel', r.fuel.value, 'carburant', r.fuel.confidence, true)
+    if (!next.name.trim() && (r.brand.value || r.model.value)) {
+      next.name = [r.brand.value, r.model.value].filter(Boolean).join(' ')
+      filled.push('nom')
+    }
+    setD(next)
+    if (!filled.length) return "Aucune information reconnue : la photo est conservée, saisissez les champs à la main (ou reprenez la photo plus nette, à plat et bien éclairée)."
+    return `Champs remplis : ${filled.join(', ')}. Vérifiez-les${doubtful.length ? ` (surtout : ${doubtful.join(', ')})` : ''} avant d'enregistrer.`
+  }
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!d.name.trim()) return setError('Le nom du véhicule est obligatoire.')
     setBusy(true)
     try {
-      const clean = { ...d, name: d.name.trim(), plate: d.plate.trim().toUpperCase() }
+      const clean = { ...d, name: d.name.trim(), plate: formatPlate(d.plate) }
       let id = initial.id
       if (id != null) await db.vehicles.update(id, clean)
       else {
@@ -116,6 +151,13 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
         <h2 className="text-xl font-bold">{initial.id != null ? 'Modifier le véhicule' : 'Nouveau véhicule'}</h2>
       </div>
 
+      {roleOf(initial.id) === 'owner' && (
+        <RegistrationScan
+          photo={d.registrationPhoto}
+          onPhoto={(blob) => setD((p) => ({ ...p, registrationPhoto: blob, registrationVersion: blob ? Date.now() : null }))}
+          onRecognized={applyRegistration}
+        />
+      )}
       <div><label className="label" htmlFor="v-name">Nom *</label>
         <input id="v-name" className="field" value={d.name} onChange={(e) => set('name', e.target.value)} placeholder="Ma Clio" required /></div>
       <div className="grid grid-cols-2 gap-3">
@@ -126,7 +168,7 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
         <div><label className="label" htmlFor="v-year">Année</label>
           <input id="v-year" className="field" type="number" inputMode="numeric" min={1900} max={2100} value={d.year ?? ''} onChange={(e) => set('year', toNum(e.target.value))} /></div>
         <div><label className="label" htmlFor="v-plate">Plaque</label>
-          <input id="v-plate" className="field uppercase" value={d.plate} onChange={(e) => set('plate', e.target.value)} placeholder="AB-123-CD" autoCapitalize="characters" /></div>
+          <input id="v-plate" className="field uppercase" value={d.plate} onChange={(e) => set('plate', formatPlate(e.target.value))} placeholder="AB-123-CD" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoComplete="off" /></div>
       </div>
       <div><label className="label" htmlFor="v-fuel">Carburant</label>
         <select id="v-fuel" className="field" value={d.fuel} onChange={(e) => set('fuel', e.target.value as Fuel)}>
@@ -134,6 +176,9 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
         </select></div>
       <div><label className="label" htmlFor="v-reg">Date de mise en circulation</label>
         <input id="v-reg" className="field" type="date" value={d.firstRegistration ?? ''} onChange={(e) => set('firstRegistration', e.target.value || null)} /></div>
+      <div><label className="label" htmlFor="v-vin">Numéro de série (VIN)</label>
+        <input id="v-vin" className="field font-mono uppercase" value={d.vin ?? ''} maxLength={17} autoCapitalize="characters" autoCorrect="off" spellCheck={false}
+          onChange={(e) => set('vin', e.target.value.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, ''))} placeholder="17 caractères (champ E)" /></div>
       <div><label className="label" htmlFor="v-km">Kilométrage actuel</label>
         <input id="v-km" className="field" type="number" inputMode="numeric" min={0} value={d.mileage ?? ''} onChange={(e) => set('mileage', toNum(e.target.value))} /></div>
       <div><label className="label" htmlFor="v-photo">Photo (optionnelle)</label>

@@ -298,6 +298,26 @@ d('API – pièces jointes', () => {
     expect((await a.c.req('GET', `/api/blobs/${V}/${E}`)).data.mime).toBe('application/octet-stream')
   })
 
+  it('la carte grise (uid « -carte ») est réservée au propriétaire', async () => {
+    const a = await signup('CarteO'), e = await signup('CarteE'), v = await signup('CarteV')
+    const V = U()
+    await syncAll(a.c, [rec('vehicle', V, V)])
+    const C = `${V}-carte`
+    expect((await put(a.c, V, C, 0, 1, b64('carte'))).status).toBe(201)
+    expect(atob((await a.c.req('GET', `/api/blobs/${V}/${C}/0`)).data)).toBe('carte')
+
+    for (const [who, role] of [[e, 'editor'], [v, 'viewer']] as const) {
+      const inv = await a.c.req('POST', `/api/vehicles/${V}/invites`, { role })
+      await who.c.req('POST', '/api/invites/accept', { code: inv.data.code })
+      expect((await who.c.req('GET', `/api/blobs/${V}/${C}`)).status).toBe(403)
+      expect((await who.c.req('GET', `/api/blobs/${V}/${C}/0`)).status).toBe(403)
+      expect((await put(who.c, V, C, 0, 1, b64('x'))).status).toBe(403)
+    }
+    // une photo ordinaire reste accessible aux membres
+    expect((await put(a.c, V, `${V}-photo`, 0, 1, b64('photo'))).status).toBe(201)
+    expect((await v.c.req('GET', `/api/blobs/${V}/${V}-photo`)).status).toBe(200)
+  })
+
   it('la suppression du document supprime la pièce jointe', async () => {
     const a = await signup('BlobDel')
     const V = U(), D = U()

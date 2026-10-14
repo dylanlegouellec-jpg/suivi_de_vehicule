@@ -18,7 +18,7 @@ export interface BackupFile {
   version: number
   exportedAt: string
   data: {
-    vehicles: (Omit<Vehicle, 'photo'> & { photo: EncodedBlob | null })[]
+    vehicles: (Omit<Vehicle, 'photo' | 'registrationPhoto'> & { photo: EncodedBlob | null; registrationPhoto?: EncodedBlob | null })[]
     documents: (Omit<DocumentRecord, 'blob'> & { blob: EncodedBlob | null })[]
     entries: Entry[]
     fuelLogs: FuelLog[]
@@ -54,7 +54,11 @@ export async function snapshotToBackup(s: Snapshot, now = new Date()): Promise<B
     version: BACKUP_VERSION,
     exportedAt: now.toISOString(),
     data: {
-      vehicles: await Promise.all(s.vehicles.map(async (v) => ({ ...v, photo: v.photo ? await encodeBlob(v.photo) : null }))),
+      vehicles: await Promise.all(s.vehicles.map(async (v) => ({
+        ...v,
+        photo: v.photo ? await encodeBlob(v.photo) : null,
+        registrationPhoto: v.registrationPhoto ? await encodeBlob(v.registrationPhoto) : null,
+      }))),
       documents: await Promise.all(s.documents.map(async (d) => ({ ...d, blob: d.blob ? await encodeBlob(d.blob) : null }))),
       entries: s.entries,
       fuelLogs: s.fuelLogs,
@@ -98,8 +102,13 @@ export function parseBackup(text: string): Snapshot {
 
   try {
     const vehicles = rows('vehicles', ['id', 'name']).map((v) => {
-      if (v.photo != null && !isBlobObj(v.photo)) throw new BackupError('Sauvegarde corrompue : photo de véhicule invalide.')
-      return { ...v, photo: v.photo ? decodeBlob(v.photo as EncodedBlob) : null } as unknown as Vehicle
+      if ((v.photo != null && !isBlobObj(v.photo)) || (v.registrationPhoto != null && !isBlobObj(v.registrationPhoto)))
+        throw new BackupError('Sauvegarde corrompue : photo de véhicule invalide.')
+      return {
+        ...v,
+        photo: v.photo ? decodeBlob(v.photo as EncodedBlob) : null,
+        registrationPhoto: v.registrationPhoto ? decodeBlob(v.registrationPhoto as EncodedBlob) : null,
+      } as unknown as Vehicle
     })
     const documents = rows('documents', ['id']).map((x) => {
       if (x.blob != null && !isBlobObj(x.blob)) throw new BackupError('Sauvegarde corrompue : document invalide.')

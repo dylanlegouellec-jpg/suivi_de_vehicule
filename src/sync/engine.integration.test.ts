@@ -174,6 +174,37 @@ d('Synchronisation client ↔ serveur', () => {
     expect(v.photoVersion).toBe(111)
   })
 
+  it('carte grise : synchronisée entre appareils du propriétaire, jamais téléchargée par un éditeur', async () => {
+    const a = new Device(), b = new Device(), c = new Device()
+    const acct = await a.signup()
+    await c.signup()
+    const vid = await a.seedVehicle()
+    await a.db.vehicles.update(vid, { vin: 'VF15R0F0A12345678', registrationPhoto: new Blob(['carte-grise'], { type: 'image/jpeg' }), registrationVersion: 222 })
+    await a.engine.run()
+    await b.login(acct.email)
+    await b.engine.run()
+    const vb = (await b.db.vehicles.toArray())[0]
+    expect(vb.vin).toBe('VF15R0F0A12345678')
+    expect(await vb.registrationPhoto!.text()).toBe('carte-grise')
+
+    // un éditeur reçoit le véhicule mais pas la carte grise
+    const vUid = (await a.db.vehicles.get(vid))!.uid!
+    const inv = await a.api.json<{ code: string }>('POST', `/api/vehicles/${vUid}/invites`, { role: 'editor' })
+    await c.api.json('POST', '/api/invites/accept', { code: inv.code })
+    await c.engine.run()
+    const vc = (await c.db.vehicles.toArray())[0]
+    expect(vc.registrationPhoto).toBeNull()
+    expect(vc.registrationVersion).toBe(222)
+    // l'éditeur modifie le véhicule : la carte grise du propriétaire n'est pas perdue
+    await c.db.vehicles.update(vc.id!, { name: 'Renommée par C' })
+    await c.engine.run()
+    await b.engine.run()
+    const vb2 = (await b.db.vehicles.toArray())[0]
+    expect(vb2.name).toBe('Renommée par C')
+    expect(vb2.registrationVersion).toBe(222)
+    expect(await vb2.registrationPhoto!.text()).toBe('carte-grise')
+  })
+
   it('partage : invité (lecture seule puis retrait)', async () => {
     const a = new Device(), c = new Device()
     await a.signup()

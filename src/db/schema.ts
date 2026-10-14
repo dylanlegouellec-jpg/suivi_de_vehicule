@@ -26,6 +26,12 @@ export interface Vehicle extends SyncFields {
   /** Change à chaque nouvelle photo ; `photoSyncedVersion` = version déjà échangée avec le serveur. */
   photoVersion?: number | null
   photoSyncedVersion?: number | null
+  /** Numéro de série (VIN, champ E de la carte grise). */
+  vin?: string
+  /** Photo de la carte grise (visible du seul propriétaire). Même principe de version que la photo. */
+  registrationPhoto?: Blob | null
+  registrationVersion?: number | null
+  registrationSyncedVersion?: number | null
   createdAt: number
 }
 

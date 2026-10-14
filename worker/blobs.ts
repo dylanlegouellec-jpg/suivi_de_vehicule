@@ -18,6 +18,12 @@ async function role(ctx: Ctx, vehicleUid: string): Promise<string | null> {
   return row?.role ?? null
 }
 
+/** Les cartes grises (uid se terminant par « -carte ») contiennent identité et adresse : propriétaire uniquement. */
+const OWNER_ONLY_SUFFIX = '-carte'
+function checkOwnerOnly(uid: string, r: string | null) {
+  if (uid.endsWith(OWNER_ONLY_SUFFIX) && r !== 'owner') throw new HttpError(403, 'Accès réservé au propriétaire.')
+}
+
 function ids(match: RegExpMatchArray) {
   const [, vehicleUid, uid] = match
   if (!UID_RE.test(vehicleUid) || !UID_RE.test(uid)) throw new HttpError(400, 'Identifiant invalide.')
@@ -40,6 +46,7 @@ export async function putBlobChunk(ctx: Ctx, match: RegExpMatchArray): Promise<R
   if (idx >= chunks) throw new HttpError(400, 'Index hors limites.')
   const r = await role(ctx, vehicleUid)
   if (!r || r === 'viewer') throw new HttpError(403, 'Accès refusé.')
+  checkOwnerOnly(uid, r)
 
   const declaredMime = (ctx.url.searchParams.get('mime') ?? '').toLowerCase()
   const mime = SAFE_MIME.test(declaredMime) ? declaredMime : 'application/octet-stream'
@@ -84,7 +91,9 @@ export async function putBlobChunk(ctx: Ctx, match: RegExpMatchArray): Promise<R
 export async function getBlobMeta(ctx: Ctx, match: RegExpMatchArray): Promise<Response> {
   requireUser(ctx)
   const { vehicleUid, uid } = ids(match)
-  if (!(await role(ctx, vehicleUid))) throw new HttpError(403, 'Accès refusé.')
+  const r = await role(ctx, vehicleUid)
+  if (!r) throw new HttpError(403, 'Accès refusé.')
+  checkOwnerOnly(uid, r)
   const meta = await ctx.env.DB.prepare(`SELECT size, mime, chunks FROM blobs WHERE uid = ? AND vehicle_uid = ? AND complete = 1`)
     .bind(uid, vehicleUid).first<{ size: number; mime: string; chunks: number }>()
   if (!meta) throw new HttpError(404, 'Pièce jointe introuvable.')
@@ -96,7 +105,9 @@ export async function getBlobChunk(ctx: Ctx, match: RegExpMatchArray): Promise<R
   requireUser(ctx)
   const { vehicleUid, uid } = ids(match)
   const idx = intParam(match[3], 'index', 0, MAX_CHUNKS - 1)
-  if (!(await role(ctx, vehicleUid))) throw new HttpError(403, 'Accès refusé.')
+  const r = await role(ctx, vehicleUid)
+  if (!r) throw new HttpError(403, 'Accès refusé.')
+  checkOwnerOnly(uid, r)
   const row = await ctx.env.DB.prepare(
     `SELECT c.data FROM blob_chunks c JOIN blobs b ON b.uid = c.uid
      WHERE c.uid = ? AND c.idx = ? AND b.vehicle_uid = ? AND b.complete = 1`,

@@ -24,8 +24,8 @@ const ALL = [db.vehicles, db.documents, db.entries, db.fuelLogs, db.reminderRule
 
 /** Retire les champs de synchronisation d'un enregistrement importé : de nouveaux identifiants seront attribués. */
 const fresh = <T extends object>(r: T): T => {
-  const { uid, dirty, rw, updatedAt, pendingDocumentUid, blobSynced, photoSyncedVersion, ...rest } = r as T & Record<string, unknown>
-  void uid; void dirty; void rw; void updatedAt; void pendingDocumentUid; void blobSynced; void photoSyncedVersion
+  const { uid, dirty, rw, updatedAt, pendingDocumentUid, blobSynced, photoSyncedVersion, registrationSyncedVersion, ...rest } = r as T & Record<string, unknown>
+  void uid; void dirty; void rw; void updatedAt; void pendingDocumentUid; void blobSynced; void photoSyncedVersion; void registrationSyncedVersion
   return rest as T
 }
 
@@ -41,7 +41,7 @@ export async function replaceAll(s: Snapshot): Promise<void> {
     await Promise.all([db.vehicles, db.documents, db.entries, db.fuelLogs, db.reminderRules, db.settings].map((t) => t.clear()))
     // Les uid de la sauvegarde sont conservés (cohérence avec le compte) ; tout est marqué à envoyer.
     const redirty = <T extends object>(r: T): T => ({ ...r, dirty: undefined, updatedAt: undefined, rw: undefined }) as T
-    await db.vehicles.bulkAdd(s.vehicles.map((r) => redirty({ ...r, photoSyncedVersion: null })))
+    await db.vehicles.bulkAdd(s.vehicles.map((r) => redirty({ ...r, photoSyncedVersion: null, registrationSyncedVersion: null })))
     await db.documents.bulkAdd(s.documents.map((r) => redirty({ ...r, blobSynced: false })))
     await db.entries.bulkAdd(s.entries.map(redirty))
     await db.fuelLogs.bulkAdd(s.fuelLogs.map(redirty))

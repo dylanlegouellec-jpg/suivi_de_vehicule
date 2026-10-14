@@ -19,7 +19,7 @@ export interface ParsedInvoice {
 
 export const LOW_CONFIDENCE = 0.6
 
-const none = <T,>(): Field<T> => ({ value: null, confidence: 0 })
+export const none = <T,>(): Field<T> => ({ value: null, confidence: 0 })
 
 /** Minuscules + suppression des accents, sans changer la longueur (index conservés). */
 export function fold(s: string): string {
@@ -161,7 +161,7 @@ const DATE_TXT_RE = new RegExp(
   'g',
 )
 
-function toIso(d: number, m: number, yRaw: number): string | null {
+export function toIso(d: number, m: number, yRaw: number): string | null {
   const nowYear = new Date().getFullYear()
   let y = yRaw
   if (yRaw < 100) y = yRaw <= (nowYear + 1) % 100 ? 2000 + yRaw : 1900 + yRaw
