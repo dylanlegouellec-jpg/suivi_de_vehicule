@@ -46,6 +46,8 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
       <dl className="card divide-y divide-slate-200 dark:divide-slate-800">
         <Row label="Date" value={formatDate(entry.date)} />
         <Row label="Montant TTC" value={entry.amount != null ? formatEuro(entry.amount) : '—'} />
+        {entry.amountHT != null && <Row label="Montant HT" value={formatEuro(entry.amountHT)} />}
+        {entry.vat != null && <Row label="TVA" value={formatEuro(entry.vat)} />}
         <Row label="Kilométrage" value={entry.km != null ? formatKm(entry.km) : '—'} />
         <Row label="Garage" value={entry.garage || '—'} />
         <Row label="Véhicule" value={vehicle?.name ?? '—'} />

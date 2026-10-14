@@ -32,6 +32,8 @@ export interface Entry {
   type: EntryType
   date: string // ISO
   amount: number | null // TTC
+  amountHT?: number | null
+  vat?: number | null
   km: number | null
   garage: string
   notes: string

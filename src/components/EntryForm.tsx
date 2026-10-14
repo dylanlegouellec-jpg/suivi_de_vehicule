@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { db } from '../db/db'
+import { saveEntry } from '../db/saveEntry'
 import type { Entry, EntryType } from '../db/schema'
 import { ENTRY_TYPES, ENTRY_TYPE_LABELS } from '../lib/entryTypes'
 import { findDuplicate } from '../lib/entries'
@@ -48,14 +49,7 @@ export default function EntryForm({ entry, onClose, onSaved }: {
           return
         }
       }
-      let id = entry?.id
-      await db.transaction('rw', db.entries, db.vehicles, async () => {
-        if (id != null) await db.entries.update(id, data)
-        else id = await db.entries.add(data)
-        const v = await db.vehicles.get(vehicleId)
-        if (v && kmNum != null && (v.mileage == null || kmNum > v.mileage)) await db.vehicles.update(vehicleId, { mileage: kmNum })
-      })
-      onSaved(id!)
+      onSaved(await saveEntry(data, { id: entry?.id }))
     } catch (e) {
       setError(errorMessage(e))
       setBusy(false)

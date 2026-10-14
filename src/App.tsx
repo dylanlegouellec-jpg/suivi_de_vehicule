@@ -5,6 +5,7 @@ import TabBar, { type Tab } from './components/TabBar'
 import HistoryScreen from './screens/HistoryScreen'
 import EntryDetailScreen from './screens/EntryDetailScreen'
 import AddScreen from './screens/AddScreen'
+import ImportScreen from './screens/ImportScreen'
 import EntryForm from './components/EntryForm'
 import { db } from './db/db'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -18,15 +19,17 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('home')
   const [showVehicles, setShowVehicles] = useState(false)
   const [entryId, setEntryId] = useState<number | null>(null)
+  const [importFiles, setImportFiles] = useState<File[] | null>(null)
   const [form, setForm] = useState<{ id?: number } | null>(null)
   const editing = useLiveQuery(() => (form?.id != null ? db.entries.get(form.id) : undefined), [form?.id])
 
   useEffect(() => { void requestPersistence() }, [])
 
-  const go = (t: Tab) => { setShowVehicles(false); setEntryId(null); setForm(null); setTab(t) }
+  const go = (t: Tab) => { setShowVehicles(false); setEntryId(null); setForm(null); setImportFiles(null); setTab(t) }
 
   let content
-  if (form) {
+  if (importFiles) content = <ImportScreen files={importFiles} onDone={() => { setImportFiles(null); setTab('history') }} />
+  else if (form) {
     if (form.id != null && !editing) content = <p role="status">Chargement…</p>
     else content = (
       <EntryForm
@@ -40,7 +43,7 @@ export default function App() {
   else if (showVehicles) content = <VehiclesScreen onBack={() => setShowVehicles(false)} />
   else if (tab === 'home') content = <HomeScreen onManageVehicles={() => setShowVehicles(true)} />
   else if (tab === 'history') content = <HistoryScreen onOpen={setEntryId} onAdd={() => setForm({})} />
-  else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} />
+  else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} onFiles={setImportFiles} />
   else if (tab === 'stats') content = <Placeholder title="Statistiques" phase={5} />
   else content = <SettingsScreen onManageVehicles={() => setShowVehicles(true)} />
 

@@ -26,11 +26,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,wasm,traineddata}'],
+        // Les ressources OCR (~4 Mo) ne sont pas préchargées : elles sont mises en cache à la première utilisation.
+        globPatterns: ['**/*.{js,mjs,css,html,png,svg}'],
+        globIgnores: ['tesseract/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/tesseract/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'ocr-assets', expiration: { maxEntries: 10 } },
+          },
+        ],
         navigateFallback: '/index.html',
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),
   ],
+  build: { chunkSizeWarningLimit: 800 },
   test: { environment: 'node' },
 })
