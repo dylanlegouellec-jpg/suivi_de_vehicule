@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { VehicleProvider } from './vehicleContext'
 import Header from './components/Header'
 import TabBar, { type Tab } from './components/TabBar'
+import HistoryScreen from './screens/HistoryScreen'
+import EntryDetailScreen from './screens/EntryDetailScreen'
+import AddScreen from './screens/AddScreen'
+import EntryForm from './components/EntryForm'
+import { db } from './db/db'
+import { useLiveQuery } from 'dexie-react-hooks'
 import Placeholder from './screens/Placeholder'
 import VehiclesScreen from './screens/VehiclesScreen'
 import SettingsScreen from './screens/SettingsScreen'
@@ -11,16 +17,30 @@ import { requestPersistence } from './lib/storage'
 export default function App() {
   const [tab, setTab] = useState<Tab>('home')
   const [showVehicles, setShowVehicles] = useState(false)
+  const [entryId, setEntryId] = useState<number | null>(null)
+  const [form, setForm] = useState<{ id?: number } | null>(null)
+  const editing = useLiveQuery(() => (form?.id != null ? db.entries.get(form.id) : undefined), [form?.id])
 
   useEffect(() => { void requestPersistence() }, [])
 
-  const go = (t: Tab) => { setShowVehicles(false); setTab(t) }
+  const go = (t: Tab) => { setShowVehicles(false); setEntryId(null); setForm(null); setTab(t) }
 
   let content
-  if (showVehicles) content = <VehiclesScreen onBack={() => setShowVehicles(false)} />
+  if (form) {
+    if (form.id != null && !editing) content = <p role="status">Chargement…</p>
+    else content = (
+      <EntryForm
+        key={form.id ?? 'new'}
+        entry={editing}
+        onClose={() => setForm(null)}
+        onSaved={(id) => { setForm(null); setEntryId(id) }}
+      />
+    )
+  } else if (entryId != null) content = <EntryDetailScreen id={entryId} onBack={() => setEntryId(null)} onEdit={() => setForm({ id: entryId })} />
+  else if (showVehicles) content = <VehiclesScreen onBack={() => setShowVehicles(false)} />
   else if (tab === 'home') content = <HomeScreen onManageVehicles={() => setShowVehicles(true)} />
-  else if (tab === 'history') content = <Placeholder title="Historique" phase={2} />
-  else if (tab === 'add') content = <Placeholder title="Ajouter" phase={2} />
+  else if (tab === 'history') content = <HistoryScreen onOpen={setEntryId} onAdd={() => setForm({})} />
+  else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} />
   else if (tab === 'stats') content = <Placeholder title="Statistiques" phase={5} />
   else content = <SettingsScreen onManageVehicles={() => setShowVehicles(true)} />
 
