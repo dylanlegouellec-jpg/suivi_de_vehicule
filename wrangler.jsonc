@@ -14,11 +14,5 @@
       "database_name": "autosuivi",
       "database_id": "25ef6879-7441-460a-9298-1a0d85d46677"
     }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "BLOBS",
-      "bucket_name": "autosuivi-blobs"
-    }
   ]
 }

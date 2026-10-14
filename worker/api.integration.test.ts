@@ -26,7 +26,10 @@ class Client {
 }
 
 const uniq = () => Math.random().toString(36).slice(2, 10)
-const PW = 'mot-de-passe-solide'
+// Le serveur ne reçoit jamais le mot de passe mais une clé dérivée de 64 caractères hexadécimaux :
+// pour tester l'API, n'importe quelle valeur de ce format joue le rôle d'un mot de passe.
+const key = (c: string) => c.repeat(64)
+const PW = key('a'), BAD = key('b'), NEW = key('c'), NEW2 = key('d'), NEW3 = key('e')
 async function signup(name = 'Test') {
   const c = new Client()
   const email = `${name.toLowerCase()}-${uniq()}@example.com`
@@ -48,14 +51,14 @@ d('API – comptes', () => {
     const { c, email } = await signup('Alice')
     expect((await c.req('GET', '/api/auth/me')).data.user.email).toBe(email)
     expect((await new Client().req('POST', '/api/auth/register', { email, password: PW })).status).toBe(409)
-    expect((await new Client().req('POST', '/api/auth/register', { email: 'x@example.com', password: 'court' })).status).toBe(400)
+    expect((await new Client().req('POST', '/api/auth/register', { email: 'x@example.com', password: 'court' })).status).toBe(400) // pas une clé dérivée
     expect((await new Client().req('POST', '/api/auth/register', { email: 'pas-un-email', password: PW })).status).toBe(400)
   })
 
   it('connexion, mauvaise connexion, déconnexion', async () => {
     const { email } = await signup('Bob')
     const c = new Client()
-    expect((await c.req('POST', '/api/auth/login', { email, password: 'mauvais-mot-de-passe' })).status).toBe(401)
+    expect((await c.req('POST', '/api/auth/login', { email, password: BAD })).status).toBe(401)
     expect((await c.req('POST', '/api/auth/login', { email: 'inconnu@example.com', password: PW })).status).toBe(401)
     expect((await c.req('POST', '/api/auth/login', { email: email.toUpperCase(), password: PW })).status).toBe(200)
     expect((await c.req('GET', '/api/auth/me')).data.user.email).toBe(email)
@@ -67,20 +70,20 @@ d('API – comptes', () => {
     const { email } = await signup('Rate')
     const c = new Client('203.0.113.77')
     let last = 0
-    for (let i = 0; i < 10; i++) last = (await c.req('POST', '/api/auth/login', { email, password: 'faux-faux-faux-faux' })).status
+    for (let i = 0; i < 10; i++) last = (await c.req('POST', '/api/auth/login', { email, password: BAD })).status
     expect(last).toBe(429)
   })
 
   it('réinitialisation par code de récupération (usage unique)', async () => {
     const { email, recovery } = await signup('Reset')
     const c = new Client()
-    expect((await c.req('POST', '/api/auth/reset-password', { email, recoveryCode: 'AAAA-BBBB-CCCC-DDDD-EEEE', newPassword: 'nouveau-mot-de-passe' })).status).toBe(401)
-    const ok = await c.req('POST', '/api/auth/reset-password', { email: email, recoveryCode: recovery.toLowerCase(), newPassword: 'nouveau-mot-de-passe' })
+    expect((await c.req('POST', '/api/auth/reset-password', { email, recoveryCode: 'AAAA-BBBB-CCCC-DDDD-EEEE', newPassword: NEW })).status).toBe(401)
+    const ok = await c.req('POST', '/api/auth/reset-password', { email: email, recoveryCode: recovery.toLowerCase(), newPassword: NEW })
     expect(ok.status).toBe(200)
     expect(ok.data.recoveryCode).not.toBe(recovery)
     expect((await new Client().req('POST', '/api/auth/login', { email, password: PW })).status).toBe(401)
-    expect((await new Client().req('POST', '/api/auth/login', { email, password: 'nouveau-mot-de-passe' })).status).toBe(200)
-    expect((await new Client().req('POST', '/api/auth/reset-password', { email, recoveryCode: recovery, newPassword: 'encore-un-autre-mdp' })).status).toBe(401)
+    expect((await new Client().req('POST', '/api/auth/login', { email, password: NEW })).status).toBe(200)
+    expect((await new Client().req('POST', '/api/auth/reset-password', { email, recoveryCode: recovery, newPassword: NEW3 })).status).toBe(401)
   })
 
   it('refuse les requêtes modifiantes sans origine valide (CSRF)', async () => {
@@ -91,10 +94,10 @@ d('API – comptes', () => {
 
   it('changement de mot de passe', async () => {
     const { c, email } = await signup('Chg')
-    expect((await c.req('POST', '/api/auth/change-password', { currentPassword: 'faux-faux-faux', newPassword: 'un-autre-mot-de-passe' })).status).toBe(401)
-    expect((await c.req('POST', '/api/auth/change-password', { currentPassword: PW, newPassword: 'un-autre-mot-de-passe' })).status).toBe(200)
+    expect((await c.req('POST', '/api/auth/change-password', { currentPassword: BAD, newPassword: NEW2 })).status).toBe(401)
+    expect((await c.req('POST', '/api/auth/change-password', { currentPassword: PW, newPassword: NEW2 })).status).toBe(200)
     expect((await c.req('GET', '/api/auth/me')).data.user.email).toBe(email)
-    expect((await new Client().req('POST', '/api/auth/login', { email, password: 'un-autre-mot-de-passe' })).status).toBe(200)
+    expect((await new Client().req('POST', '/api/auth/login', { email, password: NEW2 })).status).toBe(200)
   })
 })
 
@@ -249,25 +252,50 @@ d('API – partage', () => {
 })
 
 d('API – pièces jointes', () => {
-  it('envoi, lecture, droits, types sûrs, taille', async () => {
+  const b64 = (s: string | Uint8Array) => btoa(typeof s === 'string' ? s : String.fromCharCode(...s))
+  const put = (c: Client, V: string, D: string, idx: number, chunks: number, data: string, extra = '') =>
+    c.req('PUT', `/api/blobs/${V}/${D}/${idx}?chunks=${chunks}&size=${chunks * 100}&mime=application%2Fpdf${extra}`, undefined, { raw: data, type: 'text/plain' })
+
+  it('envoi par morceaux, lecture, droits', async () => {
     const a = await signup('Blob'), b = await signup('BlobB')
     const V = U(), D = U()
     await syncAll(a.c, [rec('vehicle', V, V), rec('document', D, V, { name: 'f.pdf' })])
-    const bytes = new Uint8Array([37, 80, 68, 70, 45, 49])
-    expect((await a.c.req('PUT', `/api/blobs/${V}/${D}`, undefined, { raw: bytes, type: 'application/pdf' })).status).toBe(201)
-    const got = await a.c.req('GET', `/api/blobs/${V}/${D}`)
-    expect(got.status).toBe(200)
-    expect(got.headers.get('content-type')).toBe('application/pdf')
-    expect(got.headers.get('x-content-type-options')).toBe('nosniff')
+    expect((await put(a.c, V, D, 0, 2, b64('%PDF-1'))).status).toBe(201)
+    // pas lisible tant que l'envoi n'est pas terminé
+    expect((await a.c.req('GET', `/api/blobs/${V}/${D}`)).status).toBe(404)
+    expect((await put(a.c, V, D, 1, 2, b64('-suite'))).status).toBe(201)
+    const meta = await a.c.req('GET', `/api/blobs/${V}/${D}`)
+    expect(meta.data).toMatchObject({ chunks: 2, mime: 'application/pdf' })
+    const c0 = await a.c.req('GET', `/api/blobs/${V}/${D}/0`)
+    expect(atob(c0.data)).toBe('%PDF-1')
+    expect(c0.headers.get('content-type')).toContain('text/plain')
+    expect(c0.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(atob((await a.c.req('GET', `/api/blobs/${V}/${D}/1`)).data)).toBe('-suite')
+    expect((await a.c.req('GET', `/api/blobs/${V}/${D}/2`)).status).toBe(404)
+    // un autre compte n'a aucun accès
     expect((await b.c.req('GET', `/api/blobs/${V}/${D}`)).status).toBe(403)
-    expect((await b.c.req('PUT', `/api/blobs/${V}/${D}`, undefined, { raw: bytes })).status).toBe(403)
-    // un HTML déposé ne sera jamais servi comme HTML
+    expect((await b.c.req('GET', `/api/blobs/${V}/${D}/0`)).status).toBe(403)
+    expect((await put(b.c, V, D, 0, 1, b64('x'))).status).toBe(403)
+  })
+
+  it('remplacement, reprise et validation', async () => {
+    const a = await signup('BlobR')
+    const V = U(), D = U()
+    await syncAll(a.c, [rec('vehicle', V, V)])
+    await put(a.c, V, D, 0, 1, b64('premier'))
+    expect(atob((await a.c.req('GET', `/api/blobs/${V}/${D}/0`)).data)).toBe('premier')
+    await put(a.c, V, D, 0, 1, b64('second'))
+    expect(atob((await a.c.req('GET', `/api/blobs/${V}/${D}/0`)).data)).toBe('second')
+    // morceau sans début d'envoi, nombre de morceaux incohérent, données non base64, trop gros
+    expect((await put(a.c, V, U(), 1, 2, b64('x'))).status).toBe(409)
+    expect((await put(a.c, V, D, 1, 3, b64('x'))).status).toBe(409)
+    expect((await put(a.c, V, U(), 0, 1, '<script>alert(1)</script>')).status).toBe(400)
+    expect((await put(a.c, V, U(), 0, 1, 'A'.repeat(1_000_000))).status).toBe(413)
+    expect((await a.c.req('PUT', `/api/blobs/${V}/${U()}/0?chunks=99&size=1`, undefined, { raw: 'AAAA', type: 'text/plain' })).status).toBe(400)
+    // pièce jointe jamais servie comme type dangereux
     const E = U()
-    await a.c.req('PUT', `/api/blobs/${V}/${E}`, undefined, { raw: '<script>alert(1)</script>', type: 'text/html' })
-    expect((await a.c.req('GET', `/api/blobs/${V}/${E}`)).headers.get('content-type')).toBe('application/octet-stream')
-    // trop gros
-    expect((await a.c.req('PUT', `/api/blobs/${V}/${U()}`, undefined, { raw: new Uint8Array(16 * 1024 * 1024), type: 'application/pdf' })).status).toBe(413)
-    expect((await a.c.req('GET', `/api/blobs/${V}/${U()}`)).status).toBe(404)
+    await a.c.req('PUT', `/api/blobs/${V}/${E}/0?chunks=1&size=5&mime=text%2Fhtml`, undefined, { raw: b64('<b>'), type: 'text/plain' })
+    expect((await a.c.req('GET', `/api/blobs/${V}/${E}`)).data.mime).toBe('application/octet-stream')
   })
 
   it('la suppression du document supprime la pièce jointe', async () => {
@@ -275,9 +303,20 @@ d('API – pièces jointes', () => {
     const V = U(), D = U()
     const t = Date.now() - 5000
     await syncAll(a.c, [rec('vehicle', V, V, {}, t), rec('document', D, V, {}, t)])
-    await a.c.req('PUT', `/api/blobs/${V}/${D}`, undefined, { raw: new Uint8Array([1, 2, 3]), type: 'image/png' })
+    await put(a.c, V, D, 0, 1, b64('abc'))
     await syncAll(a.c, [rec('document', D, V, {}, t + 1000, true)])
     expect((await a.c.req('GET', `/api/blobs/${V}/${D}`)).status).toBe(404)
+    expect((await a.c.req('GET', `/api/blobs/${V}/${D}/0`)).status).toBe(404)
+  })
+
+  it('quota par compte', async () => {
+    const a = await signup('BlobQ')
+    const V = U()
+    await syncAll(a.c, [rec('vehicle', V, V)])
+    let status = 201
+    for (let i = 0; i < 25 && status === 201; i++)
+      status = (await a.c.req('PUT', `/api/blobs/${V}/${U()}/0?chunks=1&size=${8 * 1024 * 1024}&mime=application%2Fpdf`, undefined, { raw: b64('x'), type: 'text/plain' })).status
+    expect(status).toBe(413)
   })
 })
 
@@ -289,7 +328,7 @@ d('API – suppression de compte', () => {
     const inv = await a.c.req('POST', `/api/vehicles/${Vshared}/invites`, { role: 'editor' })
     await b.c.req('POST', '/api/invites/accept', { code: inv.data.code })
 
-    expect((await a.c.req('POST', '/api/account/delete', { password: 'faux-faux-faux' })).status).toBe(401)
+    expect((await a.c.req('POST', '/api/account/delete', { password: BAD })).status).toBe(401)
     expect((await a.c.req('POST', '/api/account/delete', { password: PW })).status).toBe(200)
     expect((await a.c.req('GET', '/api/auth/me')).data.user).toBeNull()
 

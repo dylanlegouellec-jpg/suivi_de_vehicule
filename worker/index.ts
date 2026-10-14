@@ -1,5 +1,5 @@
 import { changePassword, currentUser, deleteAccount, login, logout, me, register, resetPassword } from './auth'
-import { getBlob, putBlob } from './blobs'
+import { getBlobChunk, getBlobMeta, putBlobChunk } from './blobs'
 import { ensureSchema } from './db'
 import { acceptInvite, createInvite, listMembers, removeMember } from './sharing'
 import { sync } from './sync'
@@ -17,8 +17,9 @@ const routes: { method: string; path: RegExp; handler: Handler }[] = [
   { method: 'GET', path: /^\/api\/auth\/me$/, handler: me },
   { method: 'POST', path: /^\/api\/account\/delete$/, handler: deleteAccount },
   { method: 'POST', path: /^\/api\/sync$/, handler: sync },
-  { method: 'PUT', path: /^\/api\/blobs\/([^/]+)\/([^/]+)$/, handler: putBlob },
-  { method: 'GET', path: /^\/api\/blobs\/([^/]+)\/([^/]+)$/, handler: getBlob },
+  { method: 'PUT', path: /^\/api\/blobs\/([^/]+)\/([^/]+)\/(\d+)$/, handler: putBlobChunk },
+  { method: 'GET', path: /^\/api\/blobs\/([^/]+)\/([^/]+)\/(\d+)$/, handler: getBlobChunk },
+  { method: 'GET', path: /^\/api\/blobs\/([^/]+)\/([^/]+)$/, handler: getBlobMeta },
   { method: 'GET', path: /^\/api\/vehicles\/([^/]+)\/members$/, handler: listMembers },
   { method: 'POST', path: /^\/api\/vehicles\/([^/]+)\/invites$/, handler: createInvite },
   { method: 'DELETE', path: /^\/api\/vehicles\/([^/]+)\/members\/([^/]+)$/, handler: removeMember },

@@ -27,10 +27,13 @@ const MIGRATIONS: { id: number; statements: string[] }[] = [
       `CREATE TABLE invites (
         code_hash TEXT PRIMARY KEY, vehicle_uid TEXT NOT NULL, role TEXT NOT NULL, created_by TEXT NOT NULL,
         expires_at INTEGER NOT NULL, used INTEGER NOT NULL DEFAULT 0)`,
+      // Pièces jointes : découpées en morceaux (base64) car une ligne D1 est limitée à 2 Mo.
       `CREATE TABLE blobs (
         uid TEXT PRIMARY KEY, vehicle_uid TEXT NOT NULL, user_id TEXT NOT NULL, size INTEGER NOT NULL,
-        mime TEXT NOT NULL, created_at INTEGER NOT NULL)`,
+        mime TEXT NOT NULL, chunks INTEGER NOT NULL, complete INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL)`,
       `CREATE INDEX idx_blobs_user ON blobs(user_id)`,
+      `CREATE INDEX idx_blobs_vehicle ON blobs(vehicle_uid)`,
+      `CREATE TABLE blob_chunks (uid TEXT NOT NULL, idx INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY (uid, idx))`,
       `CREATE TABLE rate_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL, window_start INTEGER NOT NULL)`,
     ],
   },

@@ -1,5 +1,6 @@
 import { db, getSetting, setLocalChangeListener, setSetting } from '../db/db'
 import { ApiError, createApi, NetworkError } from './api'
+import { deriveAuthKey } from '../lib/kdf'
 import { SyncEngine } from './engine'
 
 export interface AuthUser { id: string; email: string; name: string }
@@ -142,17 +143,17 @@ async function finishAuth(user: AuthUser, recoveryCode?: string): Promise<AuthRe
 }
 
 export async function register(email: string, password: string, name: string): Promise<AuthResult> {
-  const r = await api.json<{ user: AuthUser; recoveryCode: string }>('POST', '/api/auth/register', { email, password, name })
+  const r = await api.json<{ user: AuthUser; recoveryCode: string }>('POST', '/api/auth/register', { email, password: await deriveAuthKey(email, password), name })
   return finishAuth(r.user, r.recoveryCode)
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {
-  const r = await api.json<{ user: AuthUser }>('POST', '/api/auth/login', { email, password })
+  const r = await api.json<{ user: AuthUser }>('POST', '/api/auth/login', { email, password: await deriveAuthKey(email, password) })
   return finishAuth(r.user)
 }
 
 export async function resetPassword(email: string, recoveryCode: string, newPassword: string): Promise<{ recoveryCode: string; user: AuthUser | null }> {
-  const r = await api.json<{ recoveryCode: string }>('POST', '/api/auth/reset-password', { email, recoveryCode, newPassword })
+  const r = await api.json<{ recoveryCode: string }>('POST', '/api/auth/reset-password', { email, recoveryCode, newPassword: await deriveAuthKey(email, newPassword) })
   const me = await api.json<{ user: AuthUser | null }>('GET', '/api/auth/me')
   return { recoveryCode: r.recoveryCode, user: me.user }
 }
@@ -167,12 +168,19 @@ export async function logout(opts: { wipe: boolean }) {
 }
 
 export async function changePassword(currentPassword: string, newPassword: string) {
-  await api.json('POST', '/api/auth/change-password', { currentPassword, newPassword })
+  const email = authStore.get().user?.email
+  if (!email) throw new Error('Connexion requise.')
+  await api.json('POST', '/api/auth/change-password', {
+    currentPassword: await deriveAuthKey(email, currentPassword),
+    newPassword: await deriveAuthKey(email, newPassword),
+  })
 }
 
 /** Supprime le compte et ses données côté serveur ; les données de l'appareil sont conservées en local (ou effacées). */
 export async function deleteAccount(password: string, opts: { wipe: boolean }) {
-  await api.json('POST', '/api/account/delete', { password })
+  const email = authStore.get().user?.email
+  if (!email) throw new Error('Connexion requise.')
+  await api.json('POST', '/api/account/delete', { password: await deriveAuthKey(email, password) })
   await setSetting('auth.user', null)
   if (opts.wipe) await wipeLocalData()
   else {

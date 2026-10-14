@@ -4,6 +4,7 @@ import { db } from '../db/db'
 import { useAuth, useSyncStatus } from '../sync/hooks'
 import { acceptInvite, changePassword, deleteAccount, logout, syncNow } from '../sync/session'
 import { ApiError, NetworkError } from '../sync/api'
+import { MIN_PASSWORD_LENGTH } from '../lib/kdf'
 
 const msg = (e: unknown) => (e instanceof NetworkError ? 'Hors ligne : connexion au serveur impossible.' : e instanceof ApiError || e instanceof Error ? e.message : 'Erreur.')
 
@@ -44,7 +45,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
       <details className="text-xs text-slate-600 dark:text-slate-400">
         <summary className="min-h-[44px] cursor-pointer py-3">Données personnelles et confidentialité</summary>
         <div className="space-y-1">
-          <p>Avec un compte, sont enregistrés sur les serveurs Cloudflare (base D1 et stockage R2, de votre propre déploiement) : votre e-mail, votre nom affiché, un mot de passe haché (jamais en clair), vos véhicules, entrées, pleins, rappels et documents joints.</p>
+          <p>Avec un compte, sont enregistrés sur Cloudflare (base D1 de votre propre déploiement) : votre e-mail, votre nom affiché, une empreinte de votre mot de passe (le mot de passe lui-même ne quitte jamais votre appareil), vos véhicules, entrées, pleins, rappels et documents joints.</p>
           <p>Aucun suivi, aucune publicité, aucun service tiers d'analyse. Les personnes avec qui vous partagez un véhicule voient les données de ce véhicule, leur adresse e-mail et leur nom affiché.</p>
           <p>« Supprimer le compte » efface vos données en ligne ; vous pouvez aussi exporter une sauvegarde complète (Réglages).</p>
         </div>
@@ -86,7 +87,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
         </form>
       )}
       {panel === 'password' && (
-        <form className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { await changePassword(a, b); setPanel(null); return 'Mot de passe modifié.' }) }}>
+        <form className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { if (b.length < MIN_PASSWORD_LENGTH) throw new Error(`Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`); await changePassword(a, b); setPanel(null); return 'Mot de passe modifié.' }) }}>
           <label className="label" htmlFor="p-cur">Mot de passe actuel</label>
           <input id="p-cur" type="password" className="field" value={a} onChange={(e) => setA(e.target.value)} autoComplete="current-password" required />
           <label className="label" htmlFor="p-new">Nouveau mot de passe (10 caractères minimum)</label>
@@ -123,7 +124,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
       <details className="text-xs text-slate-600 dark:text-slate-400">
         <summary className="min-h-[44px] cursor-pointer py-3">Données personnelles et confidentialité</summary>
         <div className="space-y-1">
-          <p>Avec un compte, sont enregistrés sur les serveurs Cloudflare (base D1 et stockage R2, de votre propre déploiement) : votre e-mail, votre nom affiché, un mot de passe haché (jamais en clair), vos véhicules, entrées, pleins, rappels et documents joints.</p>
+          <p>Avec un compte, sont enregistrés sur Cloudflare (base D1 de votre propre déploiement) : votre e-mail, votre nom affiché, une empreinte de votre mot de passe (le mot de passe lui-même ne quitte jamais votre appareil), vos véhicules, entrées, pleins, rappels et documents joints.</p>
           <p>Aucun suivi, aucune publicité, aucun service tiers d'analyse. Les personnes avec qui vous partagez un véhicule voient les données de ce véhicule, leur adresse e-mail et leur nom affiché.</p>
           <p>« Supprimer le compte » efface vos données en ligne ; vous pouvez aussi exporter une sauvegarde complète (Réglages).</p>
         </div>

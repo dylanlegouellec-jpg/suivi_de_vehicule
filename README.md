@@ -9,7 +9,8 @@ documents (PDF / photo avec OCR), historique, entretiens et rappels, carburant, 
   serveur, aucune clé API, aucune télémétrie. L'app fonctionne hors ligne.
 - **Avec un compte** : les données se synchronisent entre vos appareils et un véhicule peut être partagé avec d'autres
   personnes. L'app reste *local d'abord* : elle fonctionne hors ligne et synchronise dès que le réseau revient.
-  Le serveur est un Cloudflare Worker de votre propre compte (base **D1** + stockage **R2**), sans service tiers.
+  Le serveur est un Cloudflare Worker de votre propre compte, avec une base **D1** (données et pièces jointes), sans service tiers
+  et sans carte bancaire (plan gratuit).
 
 ## Installation et lancement
 
@@ -28,18 +29,16 @@ dans `public/tesseract/` (dossier généré, non versionné), pour que l'OCR n'a
 
 ## Déploiement sur Cloudflare (gratuit)
 
-`wrangler.jsonc` déclare le Worker (`worker/index.ts`), les fichiers statiques (`dist/`, en application monopage),
-la base **D1** `autosuivi` (binding `DB`) et le bucket **R2** `autosuivi-blobs` (binding `BLOBS`).
+`wrangler.jsonc` déclare le Worker (`worker/index.ts`), les fichiers statiques (`dist/`, en application monopage)
+et la base **D1** `autosuivi` (binding `DB`). Tout fonctionne avec le plan gratuit, sans carte bancaire.
 
 1. Poussez le dépôt sur GitHub.
 2. Cloudflare → **Workers & Pages → Create → Import a repository**, puis choisissez le dépôt.
    Réglages : *Build command* `npm run build`, *Deploy command* `npx wrangler deploy` (valeur par défaut).
    Le nom du Worker doit correspondre à `name` dans `wrangler.jsonc`.
-3. Ressources (une seule fois) :
-   - **R2** : activez-le dans le tableau de bord (R2 Object Storage ; l'offre gratuite donne 10 Go, une carte bancaire
-     peut être demandée) puis créez le bucket : `npx wrangler r2 bucket create autosuivi-blobs`.
-   - **D1** : `npx wrangler d1 create autosuivi`, puis copiez le `database_id` obtenu dans `wrangler.jsonc`.
-   - Les tables sont créées **automatiquement** au premier appel de l'API (migrations versionnées dans `worker/db.ts`).
+3. Base de données (une seule fois) : `npx wrangler d1 create autosuivi`, puis copiez le `database_id` obtenu dans
+   `wrangler.jsonc`. Les tables sont créées **automatiquement** au premier appel de l'API (migrations versionnées
+   dans `worker/db.ts`) : rien à exécuter à la main.
 4. Déployez : chaque push sur `main` redéploie. Le site est servi en HTTPS sur `*.workers.dev` ;
    le HTTPS est **obligatoire** pour le service worker, l'installation et les cookies de session.
 
@@ -48,7 +47,7 @@ En ligne de commande : `npm run build && npx wrangler deploy` (après `npx wrang
 ### Développer avec l'API en local
 
 ```bash
-npm run dev:api      # build + wrangler dev : app + API sur http://localhost:8787 (D1 et R2 simulés, données dans .wrangler/state)
+npm run dev:api      # build + wrangler dev : app + API sur http://localhost:8787 (D1 simulée, données dans .wrangler/state)
 npm run test:api     # tests d'intégration de l'API (le serveur ci-dessus doit tourner : API_URL=http://localhost:8787)
 ```
 
@@ -76,7 +75,7 @@ src/lib/stats/     consommation L/100 km, coûts, répartitions
 src/lib/backup/    format de sauvegarde, validation, fusion, rappel
 src/lib/export/    CSV, carnet d'entretien PDF (jsPDF), partage de fichier
 src/sync/          client de synchronisation : API, moteur (envoi/réception/conflits), session et compte
-worker/            API Cloudflare Worker : comptes, synchronisation (D1), pièces jointes (R2), partage
+worker/            API Cloudflare Worker (D1) : comptes, synchronisation, pièces jointes, partage
 src/screens/       écrans ; src/components/ composants partagés
 ```
 
@@ -85,13 +84,17 @@ La logique métier est séparée de l'UI et couverte par les tests (`*.test.ts`)
 
 ## Comptes, synchronisation et partage
 
-- **Compte** : e-mail + mot de passe (haché PBKDF2, jamais stocké en clair). Aucun e-mail n'est envoyé : à la création,
+- **Compte** : e-mail + mot de passe. Le mot de passe **ne quitte jamais l'appareil** : l'app en dérive une clé (PBKDF2,
+  600 000 itérations, sel = e-mail) et seul un hachage de cette clé est stocké. Ce calcul est fait sur le téléphone
+  (une fraction de seconde) pour que le serveur reste très léger, compatible avec la limite de CPU du plan gratuit.
+  Aucun e-mail n'est envoyé : à la création,
   un **code de récupération** est affiché une seule fois ; il sert à réinitialiser le mot de passe. Sessions par cookie
   `HttpOnly`/`Secure`/`SameSite=Lax`, protection CSRF par contrôle de l'origine, limitation des tentatives.
 - **Synchronisation** : chaque enregistrement a un identifiant global et une date de modification ; en cas de
   modification simultanée, **la plus récente gagne** (les horloges des appareils doivent être à peu près justes).
-  Les suppressions sont propagées. Les photos et documents sont envoyés séparément (15 Mo max par fichier, 300 Mo par compte)
-  et téléchargés à la demande sur les autres appareils.
+  Les suppressions sont propagées. Les photos et documents sont envoyés séparément, par morceaux de 700 Ko stockés dans D1
+  (8 Mo max par fichier, 150 Mo par compte), et téléchargés à la demande sur les autres appareils.
+  Plan gratuit D1 : 5 Go de stockage au total.
 - **Partage** : le propriétaire d'un véhicule crée un **code d'invitation** à usage unique (7 jours) avec le droit
   « peut modifier » ou « lecture seule ». Le code se transmet par n'importe quel canal et se saisit dans
   Réglages → Compte → Rejoindre un véhicule. Le propriétaire peut retirer un membre ; un membre peut quitter.
@@ -105,6 +108,8 @@ La logique métier est séparée de l'UI et couverte par les tests (`*.test.ts`)
 - **Avec un compte** : pas de vérification d'adresse e-mail, pas de « mot de passe oublié » par e-mail (code de
   récupération uniquement). Si vous perdez à la fois le mot de passe et le code, le compte n'est pas récupérable.
 - **Conflits** : la dernière modification gagne, sans fusion champ par champ.
+- **Limites du plan gratuit Cloudflare** : 100 000 requêtes Worker par jour, 100 000 écritures D1 par jour, 5 Go de base ;
+  largement suffisant pour un usage familial. Un fichier de plus de 8 Mo n'est pas synchronisé (il reste sur l'appareil).
 - **Un fichier non téléchargé** (document venu d'un autre appareil) nécessite du réseau la première fois.
 
 - **Stockage iOS** : Safari peut vider les données des sites peu utilisés. L'app demande le stockage persistant

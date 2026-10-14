@@ -55,11 +55,17 @@ function credentials(body: Record<string, unknown>) {
   return email
 }
 
-function checkPassword(pw: unknown, name = 'mot de passe') {
-  const p = str(pw, 200, name, 1)
-  if (p.length < 10) throw new HttpError(400, 'Le mot de passe doit contenir au moins 10 caractères.')
-  return p
+const KEY_RE = /^[0-9a-f]{64}$/
+
+/**
+ * Le client n'envoie jamais le mot de passe : il envoie une clé dérivée (64 caractères hexadécimaux).
+ * La longueur minimale du mot de passe est donc contrôlée par l'application côté appareil.
+ */
+function authKey(pw: unknown, name = 'clé de connexion') {
+  if (typeof pw !== 'string' || !KEY_RE.test(pw)) throw new HttpError(400, `Champ « ${name} » invalide : mettez l'application à jour.`)
+  return pw
 }
+const checkPassword = authKey
 
 export async function register(ctx: Ctx): Promise<Response> {
   if (await rateLimited(ctx.env, `register:${ctx.ip}`, 10, 3600)) throw new HttpError(429, 'Trop de créations de compte. Réessayez plus tard.')
@@ -87,7 +93,7 @@ export async function register(ctx: Ctx): Promise<Response> {
 export async function login(ctx: Ctx): Promise<Response> {
   const body = await readJson(ctx.req)
   const email = credentials(body)
-  const password = str(body.password, 200, 'mot de passe')
+  const password = authKey(body.password)
   if (
     (await rateLimited(ctx.env, `login:${email}:${ctx.ip}`, 8, 900)) ||
     (await rateLimited(ctx.env, `login-ip:${ctx.ip}`, 40, 900))
@@ -136,7 +142,7 @@ export async function resetPassword(ctx: Ctx): Promise<Response> {
 export async function changePassword(ctx: Ctx): Promise<Response> {
   const user = requireUser(ctx)
   const body = await readJson(ctx.req)
-  const current = str(body.currentPassword, 200, 'mot de passe actuel')
+  const current = authKey(body.currentPassword, 'mot de passe actuel')
   const next = checkPassword(body.newPassword, 'nouveau mot de passe')
   if (await rateLimited(ctx.env, `chpw:${user.id}`, 8, 900)) throw new HttpError(429, 'Trop de tentatives.')
   const row = await ctx.env.DB.prepare(`SELECT pw_hash FROM users WHERE id = ?`).bind(user.id).first<{ pw_hash: string }>()
@@ -156,7 +162,7 @@ export async function changePassword(ctx: Ctx): Promise<Response> {
 export async function deleteAccount(ctx: Ctx): Promise<Response> {
   const user = requireUser(ctx)
   const body = await readJson(ctx.req)
-  const password = str(body.password, 200, 'mot de passe')
+  const password = authKey(body.password)
   if (await rateLimited(ctx.env, `delacc:${user.id}`, 5, 900)) throw new HttpError(429, 'Trop de tentatives.')
   const row = await ctx.env.DB.prepare(`SELECT pw_hash FROM users WHERE id = ?`).bind(user.id).first<{ pw_hash: string }>()
   if (!row || !(await verifyPassword(password, row.pw_hash))) throw new HttpError(401, 'Mot de passe incorrect.')
@@ -181,8 +187,7 @@ export async function deleteAccount(ctx: Ctx): Promise<Response> {
   }
   // Les pièces jointes de l'utilisateur dans les véhicules conservés restent à leurs membres.
   for (const v of toPurge) {
-    const keys = (await ctx.env.DB.prepare(`SELECT uid FROM blobs WHERE vehicle_uid = ?`).bind(v).all<{ uid: string }>()).results ?? []
-    if (keys.length) await ctx.env.BLOBS.delete(keys.map((k) => `${v}/${k.uid}`))
+    stmts.push(ctx.env.DB.prepare(`DELETE FROM blob_chunks WHERE uid IN (SELECT uid FROM blobs WHERE vehicle_uid = ?)`).bind(v))
     stmts.push(ctx.env.DB.prepare(`DELETE FROM blobs WHERE vehicle_uid = ?`).bind(v))
   }
   stmts.push(

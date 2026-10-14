@@ -4,7 +4,7 @@ import { hashPassword, normalizeCode, randomCode, randomToken, safeEqual, sha256
 describe('mots de passe', () => {
   it('vérifie le bon mot de passe et refuse les autres', async () => {
     const h = await hashPassword('correct horse battery')
-    expect(h.startsWith('pbkdf2$100000$')).toBe(true)
+    expect(h.startsWith('pbkdf2$2000$')).toBe(true)
     expect(await verifyPassword('correct horse battery', h)).toBe(true)
     expect(await verifyPassword('Correct horse battery', h)).toBe(false)
     expect(await verifyPassword('', h)).toBe(false)

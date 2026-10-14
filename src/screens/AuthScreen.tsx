@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError, NetworkError } from '../sync/api'
+import { MIN_PASSWORD_LENGTH } from '../lib/kdf'
 import { completeAuth, confirmAccount, login, logout, register, resetPassword, wipeLocalData, type AuthUser } from '../sync/session'
 
 type Mode = 'login' | 'register' | 'reset'
@@ -28,6 +29,7 @@ export default function AuthScreen({ onClose, initialMode = 'login' }: { onClose
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
+    if (mode !== 'login' && password.length < MIN_PASSWORD_LENGTH) return setError(`Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`)
     void handle(async () => {
       if (mode === 'login') {
         const r = await login(email, password)

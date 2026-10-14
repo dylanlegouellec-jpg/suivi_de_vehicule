@@ -1,7 +1,11 @@
 // Fonctions cryptographiques pures (WebCrypto) : hachage des mots de passe, jetons, codes.
 
 const enc = new TextEncoder()
-const PBKDF2_ITERATIONS = 100_000 // maximum accepté par Cloudflare Workers
+// L'entrée est déjà une clé de 256 bits dérivée côté appareil (PBKDF2 600 000 itérations, voir src/lib/kdf.ts) :
+// un hachage léger suffit ici et tient dans la limite de CPU du plan gratuit. Les anciens hachages plus coûteux
+// restent vérifiables (le nombre d'itérations est stocké avec le hachage).
+const PBKDF2_ITERATIONS = 2_000
+const MAX_VERIFY_ITERATIONS = 100_000 // maximum accepté par Cloudflare Workers
 
 export const toB64 = (buf: ArrayBuffer | Uint8Array) => {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf)
@@ -40,7 +44,7 @@ export async function hashPassword(password: string): Promise<string> {
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [scheme, iter, salt, hash] = stored.split('$')
   if (scheme !== 'pbkdf2' || !iter || !salt || !hash) return false
-  const iterations = Math.min(Number(iter), PBKDF2_ITERATIONS)
+  const iterations = Math.min(Number(iter), MAX_VERIFY_ITERATIONS)
   return safeEqual(toB64(await derive(password, fromB64(salt), iterations)), hash)
 }
 

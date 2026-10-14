@@ -1,6 +1,7 @@
 import { KINDS, HttpError, type Ctx, type Kind, type Role } from './types'
 import { chunk, json, readJson, UID_RE } from './util'
 import { requireUser } from './auth'
+import { deleteBlobStatements } from './blobs'
 
 export const MAX_CHANGES = 50
 const PULL_LIMIT = 300
@@ -117,8 +118,7 @@ export async function sync(ctx: Ctx): Promise<Response> {
     // Pièces jointes des documents supprimés
     for (const c of accepted) {
       if (c.kind === 'document' && c.deleted) {
-        await ctx.env.BLOBS.delete(`${c.vehicleUid}/${c.uid}`)
-        await db.prepare(`DELETE FROM blobs WHERE uid = ? AND vehicle_uid = ?`).bind(c.uid, c.vehicleUid).run()
+        await db.batch(deleteBlobStatements(db, { uid: c.uid, vehicleUid: c.vehicleUid }))
       }
     }
   }

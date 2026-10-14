@@ -37,9 +37,9 @@ class Device {
   }
   signup() {
     const email = `u${Math.random().toString(36).slice(2, 10)}@example.com`
-    return this.api.json<{ user: { id: string } }>('POST', '/api/auth/register', { email, password: 'mot-de-passe-solide', name: 'T' }).then((r) => ({ email, id: r.user.id }))
+    return this.api.json<{ user: { id: string } }>('POST', '/api/auth/register', { email, password: 'a'.repeat(64), name: 'T' }).then((r) => ({ email, id: r.user.id }))
   }
-  login(email: string) { return this.api.json('POST', '/api/auth/login', { email, password: 'mot-de-passe-solide' }) }
+  login(email: string) { return this.api.json('POST', '/api/auth/login', { email, password: 'a'.repeat(64) }) }
   async seedVehicle(name = 'Clio') {
     const vid = await this.db.vehicles.add({ name, brand: '', model: '', year: null, plate: 'AB-123-CD', fuel: 'essence', firstRegistration: null, mileage: 1000, photo: null, createdAt: 1 })
     return vid

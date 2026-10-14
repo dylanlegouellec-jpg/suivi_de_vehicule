@@ -1,3 +1,8 @@
+import { base64ToBytes, bytesToBase64 } from '../lib/base64'
+
+/** Taille d'un morceau envoyé au serveur (la base D1 limite chaque ligne à 2 Mo). */
+export const CHUNK_BYTES = 700 * 1024
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message)
@@ -45,14 +50,29 @@ export function createApi(fetchImpl: FetchLike = (i, init) => fetch(i, init), ba
       return (await res.json()) as T
     },
     async putBlob(path, blob) {
-      const res = await call('PUT', path, { headers: { 'content-type': blob.type || 'application/octet-stream' }, body: blob })
-      if (!res.ok) await fail(res)
+      // Envoi par morceaux en base64 ; le serveur ne décode rien (peu de CPU, ligne D1 < 2 Mo).
+      const bytes = new Uint8Array(await blob.arrayBuffer())
+      const chunks = Math.max(1, Math.ceil(bytes.length / CHUNK_BYTES))
+      const q = `chunks=${chunks}&size=${bytes.length}&mime=${encodeURIComponent(blob.type || 'application/octet-stream')}`
+      for (let i = 0; i < chunks; i++) {
+        const part = bytesToBase64(bytes.subarray(i * CHUNK_BYTES, (i + 1) * CHUNK_BYTES))
+        const res = await call('PUT', `${path}/${i}?${q}`, { headers: { 'content-type': 'text/plain' }, body: part })
+        if (!res.ok) await fail(res)
+      }
     },
     async getBlob(path) {
-      const res = await call('GET', path, {})
-      if (res.status === 404) return null
-      if (!res.ok) return fail(res)
-      return res.blob()
+      const metaRes = await call('GET', path, {})
+      if (metaRes.status === 404) return null
+      if (!metaRes.ok) return fail(metaRes)
+      const meta = (await metaRes.json()) as { mime: string; chunks: number }
+      const parts: Uint8Array[] = []
+      for (let i = 0; i < meta.chunks; i++) {
+        const res = await call('GET', `${path}/${i}`, {})
+        if (res.status === 404) return null
+        if (!res.ok) return fail(res)
+        parts.push(base64ToBytes(await res.text()))
+      }
+      return new Blob(parts as BlobPart[], { type: meta.mime })
     },
   }
 }
