@@ -22,3 +22,33 @@ input, select, textarea { font-size: 16px; }
   .field { @apply min-h-[44px] w-full rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand; }
   .label { @apply mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300; }
 }
+
+/* Graphiques : couleurs par rôle (palette validée clair/sombre, voir README) */
+.viz-root {
+  --viz-surface: #ffffff;
+  --viz-text: #0b0b0b;
+  --viz-text-secondary: #52514e;
+  --viz-grid: #e4e3df;
+  --series-1: #2a78d6;
+  --cat-carburant: #2a78d6;
+  --cat-entretien: #eb6834;
+  --cat-reparations: #1baf7a;
+  --cat-assurance: #eda100;
+  --cat-controle_technique: #e87ba4;
+  --cat-autre: #008300;
+}
+@media (prefers-color-scheme: dark) {
+  .viz-root {
+    --viz-surface: #0f172a;
+    --viz-text: #f0efec;
+    --viz-text-secondary: #c3c2b7;
+    --viz-grid: #2c2c2a;
+    --series-1: #3987e5;
+    --cat-carburant: #3987e5;
+    --cat-entretien: #d95926;
+    --cat-reparations: #199e70;
+    --cat-assurance: #c98500;
+    --cat-controle_technique: #d55181;
+    --cat-autre: #008300;
+  }
+}

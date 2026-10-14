@@ -9,7 +9,8 @@ import ImportScreen from './screens/ImportScreen'
 import EntryForm from './components/EntryForm'
 import { db } from './db/db'
 import { useLiveQuery } from 'dexie-react-hooks'
-import Placeholder from './screens/Placeholder'
+import StatsScreen from './screens/StatsScreen'
+import FuelScreen from './screens/FuelScreen'
 import VehiclesScreen from './screens/VehiclesScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import HomeScreen from './screens/HomeScreen'
@@ -24,6 +25,7 @@ export default function App() {
   const [entryId, setEntryId] = useState<number | null>(null)
   const [importFiles, setImportFiles] = useState<File[] | null>(null)
   const [showReminders, setShowReminders] = useState(false)
+  const [fuel, setFuel] = useState<{ startNew: boolean } | null>(null)
   const [form, setForm] = useState<{ id?: number; vehicleId?: number; type?: EntryType } | null>(null)
   const reminders = useReminders()
   const badge = reminders?.filter((r) => r.state === 'overdue' || r.state === 'soon').length ?? 0
@@ -31,7 +33,7 @@ export default function App() {
 
   useEffect(() => { void requestPersistence() }, [])
 
-  const go = (t: Tab) => { setShowVehicles(false); setShowReminders(false); setEntryId(null); setForm(null); setImportFiles(null); setTab(t) }
+  const go = (t: Tab) => { setShowVehicles(false); setShowReminders(false); setFuel(null); setEntryId(null); setForm(null); setImportFiles(null); setTab(t) }
 
   let content
   if (importFiles) content = <ImportScreen files={importFiles} onDone={() => { setImportFiles(null); setTab('history') }} />
@@ -47,6 +49,7 @@ export default function App() {
       />
     )
   } else if (entryId != null) content = <EntryDetailScreen id={entryId} onBack={() => setEntryId(null)} onEdit={() => setForm({ id: entryId })} />
+  else if (fuel) content = <FuelScreen key={String(fuel.startNew)} startNew={fuel.startNew} onBack={() => setFuel(null)} />
   else if (showReminders) content = (
     <RemindersScreen
       onBack={() => setShowReminders(false)}
@@ -56,8 +59,8 @@ export default function App() {
   else if (showVehicles) content = <VehiclesScreen onBack={() => setShowVehicles(false)} />
   else if (tab === 'home') content = <HomeScreen onManageVehicles={() => setShowVehicles(true)} onOpenReminders={() => setShowReminders(true)} />
   else if (tab === 'history') content = <HistoryScreen onOpen={setEntryId} onAdd={() => setForm({})} />
-  else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} onFiles={setImportFiles} />
-  else if (tab === 'stats') content = <Placeholder title="Statistiques" phase={5} />
+  else if (tab === 'add') content = <AddScreen onManual={() => setForm({})} onFiles={setImportFiles} onFuel={() => setFuel({ startNew: true })} />
+  else if (tab === 'stats') content = <StatsScreen onOpenFuel={() => setFuel({ startNew: false })} />
   else content = <SettingsScreen onManageVehicles={() => setShowVehicles(true)} onOpenReminders={() => setShowReminders(true)} />
 
   return (

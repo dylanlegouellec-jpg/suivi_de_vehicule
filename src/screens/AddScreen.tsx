@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 
-export default function AddScreen({ onManual, onFiles }: { onManual: () => void; onFiles: (files: File[]) => void }) {
+export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () => void; onFiles: (files: File[]) => void; onFuel: () => void }) {
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const multiRef = useRef<HTMLInputElement>(null)
@@ -26,11 +26,7 @@ export default function AddScreen({ onManual, onFiles }: { onManual: () => void;
       <Option icon="📄" title="Choisir un fichier" text="PDF ou image depuis l'iPhone" onClick={() => fileRef.current?.click()} />
       <Option icon="🗂️" title="Import multiple" text="Plusieurs factures d'un coup, vérifiées une par une" onClick={() => multiRef.current?.click()} />
       <Option icon="✍️" title="Saisie manuelle" text="Sans document : entretien, réparation, assurance…" onClick={onManual} />
-      <div className="card flex items-center gap-3 opacity-60" aria-disabled>
-        <span aria-hidden className="text-3xl">⛽</span>
-        <span><span className="block font-semibold">Plein de carburant</span>
-          <span className="text-sm">Bientôt disponible (phase 5)</span></span>
-      </div>
+      <Option icon="⛽" title="Plein de carburant" text="Litres, prix, kilométrage : saisie rapide" onClick={onFuel} />
       <p className="text-xs text-slate-600 dark:text-slate-400">
         L'analyse se fait entièrement sur votre appareil. La première reconnaissance de texte (OCR) télécharge les
         ressources de l'application (~4 Mo), puis elle fonctionne hors ligne.
