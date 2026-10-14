@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "predev": "node scripts/copy-ocr-assets.mjs",
-    "prebuild": "node scripts/copy-ocr-assets.mjs"
+    "prebuild": "node scripts/copy-ocr-assets.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tesseract.js-data/fra": "^1.0.0",
