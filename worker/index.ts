@@ -1,4 +1,4 @@
-import { changePassword, currentUser, deleteAccount, login, logout, me, register, resetPassword } from './auth'
+import { authConfig, changePassword, currentUser, deleteAccount, forgotPassword, login, logout, me, register, resetPassword, resetWithToken } from './auth'
 import { getBlobChunk, getBlobMeta, putBlobChunk } from './blobs'
 import { ensureSchema } from './db'
 import { acceptInvite, createInvite, listMembers, removeMember } from './sharing'
@@ -14,6 +14,9 @@ const routes: { method: string; path: RegExp; handler: Handler }[] = [
   { method: 'POST', path: /^\/api\/auth\/logout$/, handler: logout },
   { method: 'POST', path: /^\/api\/auth\/reset-password$/, handler: resetPassword },
   { method: 'POST', path: /^\/api\/auth\/change-password$/, handler: changePassword },
+  { method: 'POST', path: /^\/api\/auth\/forgot$/, handler: forgotPassword },
+  { method: 'POST', path: /^\/api\/auth\/reset-with-token$/, handler: resetWithToken },
+  { method: 'GET', path: /^\/api\/auth\/config$/, handler: authConfig },
   { method: 'GET', path: /^\/api\/auth\/me$/, handler: me },
   { method: 'POST', path: /^\/api\/account\/delete$/, handler: deleteAccount },
   { method: 'POST', path: /^\/api\/sync$/, handler: sync },

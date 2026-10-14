@@ -82,14 +82,26 @@ src/screens/       écrans ; src/components/ composants partagés
 La logique métier est séparée de l'UI et couverte par les tests (`*.test.ts`) : `parseInvoice` (24 cas),
 échéances et contrôle technique, consommation, statistiques, sauvegarde/fusion/CSV.
 
+## Carte grise, plaque et véhicules
+
+- **Plaque** : saisie guidée. Les tirets sont ajoutés tout seuls (AB-123-CD) et un chiffre à la place d'une lettre (ou
+  l'inverse) est refusé ; l'ancien format (1234 AB 56) est reconnu.
+- **Carte grise** : dans la fiche véhicule, « Photographier » lit la carte par OCR (sur l'appareil) et remplit marque (D.1),
+  modèle (D.3), plaque (A), date de première immatriculation (B), VIN (E) et carburant (P.3). Les champs déjà saisis ne sont
+  jamais écrasés ; tout est à vérifier. La **photo est conservée** dans le véhicule et visible du **seul propriétaire**,
+  y compris dans une sauvegarde ou synchronisée entre vos appareils (jamais envoyée aux personnes avec qui vous partagez).
+
 ## Comptes, synchronisation et partage
 
 - **Compte** : e-mail + mot de passe. Le mot de passe **ne quitte jamais l'appareil** : l'app en dérive une clé (PBKDF2,
   600 000 itérations, sel = e-mail) et seul un hachage de cette clé est stocké. Ce calcul est fait sur le téléphone
   (une fraction de seconde) pour que le serveur reste très léger, compatible avec la limite de CPU du plan gratuit.
-  Aucun e-mail n'est envoyé : à la création,
+  À la création,
   un **code de récupération** est affiché une seule fois ; il sert à réinitialiser le mot de passe. Sessions par cookie
   `HttpOnly`/`Secure`/`SameSite=Lax`, protection CSRF par contrôle de l'origine, limitation des tentatives.
+- **Mot de passe oublié** : deux moyens. (1) **Lien par e-mail** (valable 30 minutes, à usage unique ; la réponse est
+  identique que l'adresse soit inscrite ou non), disponible si l'envoi d'e-mails est configuré (voir ci-dessous).
+  (2) Le **code de récupération** affiché une seule fois à la création du compte, toujours disponible.
 - **Synchronisation** : chaque enregistrement a un identifiant global et une date de modification ; en cas de
   modification simultanée, **la plus récente gagne** (les horloges des appareils doivent être à peu près justes).
   Les suppressions sont propagées. Les photos et documents sont envoyés séparément, par morceaux de 700 Ko stockés dans D1
@@ -103,10 +115,27 @@ La logique métier est séparée de l'UI et couverte par les tests (`*.test.ts`)
   précédent, l'app demande d'effacer l'appareil au lieu de mélanger les données.
 - **Suppression du compte** : efface les données en ligne ; les véhicules partagés sont transférés à un autre membre s'il y en a un.
 
+### Configurer l'envoi d'e-mails (mot de passe oublié)
+
+Sans cette configuration, l'application fonctionne : seule l'option « lien par e-mail » est masquée (le code de
+récupération reste disponible). Le Worker envoie les e-mails par l'API de **Brevo** (offre gratuite : 300 e-mails par jour).
+
+1. Créez un compte sur [brevo.com](https://www.brevo.com) et **vérifiez une adresse d'expéditeur** (Expéditeurs, domaines
+   et IP dédiées → Expéditeurs) : Brevo envoie un code de validation à cette adresse.
+2. Créez une **clé d'API** (SMTP et API → Clés API).
+3. Cloudflare → votre Worker → **Settings → Variables and Secrets**, ajoutez en **Secret** :
+   `BREVO_API_KEY` (la clé), `MAIL_FROM` (l'adresse d'expéditeur vérifiée) et, au choix, `MAIL_FROM_NAME`
+   (nom affiché, « AutoSuivi » par défaut). Cloudflare redéploie le Worker.
+
+> Sans nom de domaine à vous, les e-mails partent d'une adresse « grand public » (Gmail, etc.) via Brevo : ils
+> peuvent arriver dans les courriers indésirables, voire être refusés par certains fournisseurs. Un domaine personnel,
+> authentifié chez Brevo (SPF/DKIM), est la solution fiable. En développement local, `npm run dev:api` n'envoie rien :
+> le lien s'affiche directement dans l'application (variable `MAIL_DRY_RUN`, ignorée hors `localhost`).
+
 ## Limites connues
 
-- **Avec un compte** : pas de vérification d'adresse e-mail, pas de « mot de passe oublié » par e-mail (code de
-  récupération uniquement). Si vous perdez à la fois le mot de passe et le code, le compte n'est pas récupérable.
+- **Avec un compte** : l'adresse e-mail n'est pas vérifiée à l'inscription. Sans envoi d'e-mails configuré, seul le
+  code de récupération permet de retrouver un compte : si vous perdez à la fois le mot de passe et le code, il est perdu.
 - **Conflits** : la dernière modification gagne, sans fusion champ par champ.
 - **Limites du plan gratuit Cloudflare** : 100 000 requêtes Worker par jour, 100 000 écritures D1 par jour, 5 Go de base ;
   largement suffisant pour un usage familial. Un fichier de plus de 8 Mo n'est pas synchronisé (il reste sur l'appareil).

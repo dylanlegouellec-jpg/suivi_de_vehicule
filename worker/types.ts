@@ -1,5 +1,11 @@
 export interface Env {
   DB: D1Database
+  /** Envoi d'e-mails (Brevo) : secrets à définir dans Cloudflare ; sans eux, la réinitialisation par e-mail est désactivée. */
+  BREVO_API_KEY?: string
+  MAIL_FROM?: string
+  MAIL_FROM_NAME?: string
+  /** Développement local uniquement : n'envoie rien et renvoie le lien dans la réponse (ignoré hors localhost). */
+  MAIL_DRY_RUN?: string
   ASSETS: Fetcher
 }
 

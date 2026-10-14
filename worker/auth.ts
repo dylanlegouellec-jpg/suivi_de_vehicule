@@ -1,5 +1,6 @@
 import { hashPassword, normalizeCode, randomCode, randomToken, sha256Hex, verifyPassword } from './crypto'
 import { rateLimited } from './db'
+import { mailConfigured, resetPasswordMail, sendMail } from './mail'
 import { HttpError, type Ctx, type User } from './types'
 import { json, readJson, str } from './util'
 
@@ -198,4 +199,68 @@ export async function deleteAccount(ctx: Ctx): Promise<Response> {
   )
   await ctx.env.DB.batch(stmts)
   return json({ ok: true }, 200, { 'set-cookie': sessionCookie('', 0) })
+}
+
+// ───────────────────────── Réinitialisation par e-mail ─────────────────────────
+
+const RESET_MINUTES = 30
+const dryRun = (ctx: Ctx) => ctx.env.MAIL_DRY_RUN === '1' && ctx.url.hostname === 'localhost'
+
+/** Indique à l'application si la réinitialisation par e-mail est disponible sur ce serveur. */
+export const authConfig = (ctx: Ctx) => json({ emailReset: mailConfigured(ctx.env) || dryRun(ctx) })
+
+/**
+ * Demande d'un lien de réinitialisation. La réponse est identique que le compte existe ou non
+ * (on ne révèle pas quelles adresses sont inscrites).
+ */
+export async function forgotPassword(ctx: Ctx): Promise<Response> {
+  const body = await readJson(ctx.req)
+  const email = credentials(body)
+  if (!mailConfigured(ctx.env) && !dryRun(ctx))
+    throw new HttpError(503, "L'envoi d'e-mails n'est pas configuré sur ce serveur. Utilisez votre code de récupération.")
+  if (
+    (await rateLimited(ctx.env, `forgot:${email}`, 3, 3600)) ||
+    (await rateLimited(ctx.env, `forgot-ip:${ctx.ip}`, 10, 3600))
+  ) throw new HttpError(429, 'Trop de demandes. Réessayez dans une heure.')
+
+  let devLink: string | undefined
+  const user = await ctx.env.DB.prepare(`SELECT id, email FROM users WHERE email = ?`).bind(email).first<{ id: string; email: string }>()
+  if (user) {
+    const token = randomToken()
+    await ctx.env.DB.batch([
+      ctx.env.DB.prepare(`DELETE FROM reset_tokens WHERE user_id = ? OR expires_at < ?`).bind(user.id, Date.now()),
+      ctx.env.DB.prepare(`INSERT INTO reset_tokens (token_hash, user_id, expires_at) VALUES (?, ?, ?)`)
+        .bind(await sha256Hex(token), user.id, Date.now() + RESET_MINUTES * 60_000),
+    ])
+    const link = `${ctx.url.origin}/?reset=${token}&email=${encodeURIComponent(user.email)}`
+    if (dryRun(ctx)) devLink = link
+    else {
+      try { await sendMail(ctx.env, resetPasswordMail(user.email, link)) }
+      catch (e) { console.error('Envoi du lien de réinitialisation impossible', e instanceof Error ? e.message : e) }
+    }
+  }
+  return json({ ok: true, ...(devLink ? { devLink } : {}) })
+}
+
+/** Choix d'un nouveau mot de passe avec le lien reçu par e-mail (aucune session n'est ouverte). */
+export async function resetWithToken(ctx: Ctx): Promise<Response> {
+  const body = await readJson(ctx.req)
+  const email = credentials(body)
+  const token = str(body.token, 64, 'lien', 64)
+  if (!/^[0-9a-f]{64}$/.test(token)) throw new HttpError(400, 'Lien invalide.')
+  const key = authKey(body.newPassword, 'nouveau mot de passe')
+  if (await rateLimited(ctx.env, `reset-token-ip:${ctx.ip}`, 20, 3600)) throw new HttpError(429, 'Trop de tentatives. Réessayez plus tard.')
+
+  const hash = await sha256Hex(token)
+  const row = await ctx.env.DB.prepare(
+    `SELECT t.user_id, t.expires_at, u.email FROM reset_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ?`,
+  ).bind(hash).first<{ user_id: string; expires_at: number; email: string }>()
+  if (!row || row.expires_at < Date.now() || row.email !== email) throw new HttpError(400, 'Lien invalide ou expiré. Refaites une demande.')
+
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare(`UPDATE users SET pw_hash = ? WHERE id = ?`).bind(await hashPassword(key), row.user_id),
+    ctx.env.DB.prepare(`DELETE FROM sessions WHERE user_id = ?`).bind(row.user_id),
+    ctx.env.DB.prepare(`DELETE FROM reset_tokens WHERE user_id = ?`).bind(row.user_id),
+  ])
+  return json({ ok: true })
 }

@@ -158,6 +158,21 @@ export async function resetPassword(email: string, recoveryCode: string, newPass
   return { recoveryCode: r.recoveryCode, user: me.user }
 }
 
+/** La réinitialisation par e-mail n'est proposée que si le serveur sait envoyer des e-mails. */
+export async function getAuthConfig(): Promise<{ emailReset: boolean }> {
+  try { return await api.json<{ emailReset: boolean }>('GET', '/api/auth/config') } catch { return { emailReset: false } }
+}
+
+/** Demande un lien de réinitialisation par e-mail (réponse identique que l'adresse soit inscrite ou non). */
+export function requestPasswordReset(email: string) {
+  return api.json<{ ok: boolean; devLink?: string }>('POST', '/api/auth/forgot', { email })
+}
+
+/** Choisit un nouveau mot de passe avec le lien reçu par e-mail (aucune session n'est ouverte). */
+export async function resetWithToken(email: string, token: string, newPassword: string) {
+  await api.json('POST', '/api/auth/reset-with-token', { email, token, newPassword: await deriveAuthKey(email, newPassword) })
+}
+
 export async function logout(opts: { wipe: boolean }) {
   try { if (navigator.onLine) await syncNow() } catch { /* on se déconnecte quand même */ }
   try { await api.json('POST', '/api/auth/logout') } catch { /* idem */ }

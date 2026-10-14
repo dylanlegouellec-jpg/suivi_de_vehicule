@@ -37,6 +37,14 @@ const MIGRATIONS: { id: number; statements: string[] }[] = [
       `CREATE TABLE rate_limits (key TEXT PRIMARY KEY, count INTEGER NOT NULL, window_start INTEGER NOT NULL)`,
     ],
   },
+  {
+    id: 2,
+    statements: [
+      // Liens de réinitialisation du mot de passe envoyés par e-mail (usage unique, courte durée).
+      `CREATE TABLE reset_tokens (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL, expires_at INTEGER NOT NULL)`,
+      `CREATE INDEX idx_reset_tokens_user ON reset_tokens(user_id)`,
+    ],
+  },
 ]
 
 let ready: Promise<void> | null = null

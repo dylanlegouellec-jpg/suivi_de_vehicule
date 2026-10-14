@@ -29,6 +29,14 @@ export default function App() {
   const [importFiles, setImportFiles] = useState<File[] | null>(null)
   const [showReminders, setShowReminders] = useState(false)
   const [auth, setAuth] = useState<'login' | 'register' | null>(null)
+  // Lien reçu par e-mail : /?reset=<jeton>&email=<adresse> ; on le retire aussitôt de la barre d'adresse.
+  const [resetLink, setResetLink] = useState<{ token: string; email: string } | null>(() => {
+    const q = new URLSearchParams(window.location.search)
+    const token = q.get('reset')
+    if (!token) return null
+    window.history.replaceState(null, '', window.location.pathname)
+    return { token, email: q.get('email') ?? '' }
+  })
   const [sharing, setSharing] = useState<number | null>(null)
   const sharedVehicle = useLiveQuery(() => (sharing != null ? db.vehicles.get(sharing) : undefined), [sharing])
   const [fuel, setFuel] = useState<{ startNew: boolean } | null>(null)
@@ -39,10 +47,11 @@ export default function App() {
 
   useEffect(() => { void requestPersistence(); void initAuth() }, [])
 
-  const go = (t: Tab) => { setShowVehicles(false); setShowReminders(false); setAuth(null); setSharing(null); setFuel(null); setEntryId(null); setForm(null); setImportFiles(null); setTab(t) }
+  const go = (t: Tab) => { setShowVehicles(false); setShowReminders(false); setAuth(null); setResetLink(null); setSharing(null); setFuel(null); setEntryId(null); setForm(null); setImportFiles(null); setTab(t) }
 
   let content
-  if (auth) content = <AuthScreen initialMode={auth} onClose={() => setAuth(null)} />
+  if (resetLink) content = <AuthScreen resetToken={resetLink.token} initialEmail={resetLink.email} onClose={() => setResetLink(null)} />
+  else if (auth) content = <AuthScreen initialMode={auth} onClose={() => setAuth(null)} />
   else if (sharing != null && sharedVehicle) content = <SharingScreen vehicle={sharedVehicle} onBack={() => setSharing(null)} />
   else if (importFiles) content = <ImportScreen files={importFiles} onDone={() => { setImportFiles(null); setTab('history') }} />
   else if (form) {

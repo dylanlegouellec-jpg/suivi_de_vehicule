@@ -11,7 +11,7 @@
     "predev": "node scripts/copy-ocr-assets.mjs",
     "prebuild": "node scripts/copy-ocr-assets.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p worker/tsconfig.json",
-    "dev:api": "npm run build && wrangler dev --local --persist-to .wrangler/state",
+    "dev:api": "npm run build && wrangler dev --local --var MAIL_DRY_RUN:1 --persist-to .wrangler/state",
     "test:api": "vitest run worker/api.integration.test.ts"
   },
   "dependencies": {

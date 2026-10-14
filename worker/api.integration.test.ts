@@ -101,6 +101,76 @@ d('API – comptes', () => {
   })
 })
 
+d('API – mot de passe oublié par e-mail', () => {
+  // Le serveur de test est lancé avec MAIL_DRY_RUN=1 : il ne sort aucun e-mail et renvoie le lien dans la réponse.
+  const tokenOf = (link: string) => new URL(link).searchParams.get('reset')!
+
+  it('annonce que la réinitialisation par e-mail est disponible', async () => {
+    expect((await new Client().req('GET', '/api/auth/config')).data.emailReset).toBe(true)
+  })
+
+  it('lien à usage unique : nouveau mot de passe, anciennes sessions fermées', async () => {
+    const { c, email } = await signup('Mail')
+    const other = new Client()
+    expect((await other.req('POST', '/api/auth/login', { email, password: PW })).status).toBe(200)
+
+    const f = await new Client().req('POST', '/api/auth/forgot', { email })
+    expect(f.status).toBe(200)
+    expect(f.data.devLink).toContain(`email=${encodeURIComponent(email)}`)
+    const token = tokenOf(f.data.devLink)
+
+    const anon = new Client()
+    expect((await anon.req('POST', '/api/auth/reset-with-token', { email, token, newPassword: NEW })).status).toBe(200)
+    // aucune session n'est ouverte par le lien, les anciennes sont fermées
+    expect((await anon.req('GET', '/api/auth/me')).data.user).toBeNull()
+    expect((await c.req('GET', '/api/auth/me')).data.user).toBeNull()
+    expect((await other.req('GET', '/api/auth/me')).data.user).toBeNull()
+    expect((await new Client().req('POST', '/api/auth/login', { email, password: PW })).status).toBe(401)
+    expect((await new Client().req('POST', '/api/auth/login', { email, password: NEW })).status).toBe(200)
+    // usage unique
+    expect((await new Client().req('POST', '/api/auth/reset-with-token', { email, token, newPassword: NEW2 })).status).toBe(400)
+  })
+
+  it('refuse un lien mal formé, inconnu, ou associé à une autre adresse', async () => {
+    const a = await signup('MailA'), b = await signup('MailB')
+    const token = tokenOf((await new Client().req('POST', '/api/auth/forgot', { email: a.email })).data.devLink)
+    const c = new Client()
+    expect((await c.req('POST', '/api/auth/reset-with-token', { email: a.email, token: 'abc', newPassword: NEW })).status).toBe(400)
+    expect((await c.req('POST', '/api/auth/reset-with-token', { email: a.email, token: 'f'.repeat(64), newPassword: NEW })).status).toBe(400)
+    // le lien de A ne permet pas de changer le mot de passe de B
+    expect((await c.req('POST', '/api/auth/reset-with-token', { email: b.email, token, newPassword: NEW })).status).toBe(400)
+    expect((await new Client().req('POST', '/api/auth/login', { email: b.email, password: PW })).status).toBe(200)
+    // un mot de passe en clair (non dérivé) est refusé
+    expect((await c.req('POST', '/api/auth/reset-with-token', { email: a.email, token, newPassword: 'motdepasse123' })).status).toBe(400)
+  })
+
+  it('une nouvelle demande invalide le lien précédent', async () => {
+    const { email } = await signup('MailN')
+    const first = tokenOf((await new Client().req('POST', '/api/auth/forgot', { email })).data.devLink)
+    const second = tokenOf((await new Client().req('POST', '/api/auth/forgot', { email })).data.devLink)
+    expect((await new Client().req('POST', '/api/auth/reset-with-token', { email, token: first, newPassword: NEW })).status).toBe(400)
+    expect((await new Client().req('POST', '/api/auth/reset-with-token', { email, token: second, newPassword: NEW })).status).toBe(200)
+  })
+
+  it('même réponse pour une adresse inconnue (pas d\'énumération des comptes)', async () => {
+    const known = await signup('MailK')
+    const a = await new Client().req('POST', '/api/auth/forgot', { email: known.email })
+    const b = await new Client().req('POST', '/api/auth/forgot', { email: `inconnu${Date.now()}@example.com` })
+    expect(b.status).toBe(a.status)
+    expect(b.data.ok).toBe(true)
+    expect(b.data.devLink).toBeUndefined() // aucun lien créé : le seul indice vient du mode test local
+  })
+
+  it('limite les demandes par adresse', async () => {
+    const { email } = await signup('MailR')
+    const c = new Client('198.51.100.9')
+    const statuses: number[] = []
+    for (let i = 0; i < 5; i++) statuses.push((await c.req('POST', '/api/auth/forgot', { email })).status)
+    expect(statuses.slice(0, 3)).toEqual([200, 200, 200])
+    expect(statuses[4]).toBe(429)
+  })
+})
+
 d('API – synchronisation', () => {
   it('exige une connexion', async () => {
     expect((await new Client().req('POST', '/api/sync', { cursor: { seq: 0, uid: '' }, changes: [] })).status).toBe(401)
