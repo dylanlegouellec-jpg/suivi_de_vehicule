@@ -5,12 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p worker/tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "predev": "node scripts/copy-ocr-assets.mjs",
     "prebuild": "node scripts/copy-ocr-assets.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker/tsconfig.json",
+    "dev:api": "npm run build && wrangler dev --local --persist-to .wrangler/state",
+    "test:api": "vitest run worker/api.integration.test.ts"
   },
   "dependencies": {
     "@tesseract.js-data/fra": "^1.0.0",
@@ -24,6 +26,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261014.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
@@ -33,6 +36,7 @@
     "typescript": "^5.9.3",
     "vite": "^5.4.21",
     "vite-plugin-pwa": "^0.20.5",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "wrangler": "^4.151.0"
   }
 }
