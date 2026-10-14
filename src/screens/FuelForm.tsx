@@ -11,7 +11,7 @@ import { useVehicles } from '../vehicleContext'
 const str = (n: number | null | undefined) => (n == null ? '' : String(Math.round(n * 1000) / 1000).replace('.', ','))
 
 export default function FuelForm({ log, onClose, onSaved }: { log?: FuelLog; onClose: () => void; onSaved: () => void }) {
-  const { vehicles, active } = useVehicles()
+  const { writable: vehicles, active } = useVehicles()
   const [vehicleId, setVehicleId] = useState<number | null>(log?.vehicleId ?? active?.id ?? null)
   const [date, setDate] = useState(log?.date ?? todayIso())
   const [liters, setLiters] = useState(str(log?.liters))

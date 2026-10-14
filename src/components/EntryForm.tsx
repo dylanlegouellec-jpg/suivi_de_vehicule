@@ -14,7 +14,7 @@ export default function EntryForm({ entry, defaults, onClose, onSaved }: {
   onClose: () => void
   onSaved: (id: number) => void
 }) {
-  const { vehicles, active } = useVehicles()
+  const { writable: vehicles, active } = useVehicles()
   const [vehicleId, setVehicleId] = useState<number | null>(entry?.vehicleId ?? defaults?.vehicleId ?? active?.id ?? null)
   const [type, setType] = useState<EntryType>(entry?.type ?? defaults?.type ?? 'vidange')
   const [date, setDate] = useState(entry?.date ?? todayIso())

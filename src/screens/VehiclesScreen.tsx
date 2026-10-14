@@ -18,12 +18,12 @@ const emptyDraft = (): Draft => ({
 
 const toNum = (s: string) => (s.trim() === '' ? null : Number(s))
 
-export default function VehiclesScreen({ onBack }: { onBack: () => void }) {
-  const { vehicles, active, setActiveId } = useVehicles()
+export default function VehiclesScreen({ onBack, onShare }: { onBack: () => void; onShare: (vehicleId: number) => void }) {
+  const { vehicles, active, setActiveId, roleOf } = useVehicles()
   const [editing, setEditing] = useState<{ id?: number; draft: Draft } | null>(null)
 
   if (editing)
-    return <VehicleForm initial={editing} onClose={() => setEditing(null)} onSaved={(id) => { setActiveId(id); setEditing(null) }} />
+    return <VehicleForm initial={editing} roleOf={roleOf} onClose={() => setEditing(null)} onSaved={(id) => { setActiveId(id); setEditing(null) }} />
 
   return (
     <div className="space-y-3">
@@ -43,16 +43,20 @@ export default function VehiclesScreen({ onBack }: { onBack: () => void }) {
               {v.photo ? <PhotoThumb blob={v.photo} /> : <div aria-hidden className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-2xl dark:bg-slate-800">🚗</div>}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{v.name} {v.id === active?.id && <span className="text-xs text-brand">(actif)</span>}</p>
+                {roleOf(v.id) !== 'owner' && <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Partagé · {roleOf(v.id) === 'viewer' ? 'lecture seule' : 'vous pouvez modifier'}</p>}
                 <p className="truncate text-sm text-slate-600 dark:text-slate-400">
                   {[v.brand, v.model, v.plate].filter(Boolean).join(' · ') || FUEL_LABELS[v.fuel]}
                   {v.mileage != null && ` · ${formatKm(v.mileage)}`}
                 </p>
               </div>
-              <button className="btn-secondary" onClick={() => {
+              <div className="flex flex-col gap-1">
+              <button className="btn-secondary" onClick={() => onShare(v.id!)}>Partager</button>
+              {roleOf(v.id) !== 'viewer' && <button className="btn-secondary" onClick={() => {
                 const { id, createdAt, uid, updatedAt, dirty, rw, photoSyncedVersion, ...draft } = v
                 void createdAt; void uid; void updatedAt; void dirty; void rw; void photoSyncedVersion
                 setEditing({ id, draft })
-              }}>Modifier</button>
+              }}>Modifier</button>}
+              </div>
             </li>
           ))}
         </ul>
@@ -66,7 +70,8 @@ function PhotoThumb({ blob }: { blob: Blob }) {
   return <img src={url} alt="" className="h-14 w-14 rounded-xl object-cover" />
 }
 
-function VehicleForm({ initial, onClose, onSaved }: {
+function VehicleForm({ initial, roleOf, onClose, onSaved }: {
+  roleOf: (id: number | null | undefined) => string
   initial: { id?: number; draft: Draft }
   onClose: () => void
   onSaved: (id: number) => void
@@ -141,7 +146,7 @@ function VehicleForm({ initial, onClose, onSaved }: {
       {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
 
       <button className="btn-primary w-full" disabled={busy}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>
-      {initial.id != null && <button type="button" className="btn-danger w-full" onClick={remove}>Supprimer ce véhicule</button>}
+      {initial.id != null && roleOf(initial.id) === 'owner' && <button type="button" className="btn-danger w-full" onClick={remove}>Supprimer ce véhicule</button>}
     </form>
   )
 }

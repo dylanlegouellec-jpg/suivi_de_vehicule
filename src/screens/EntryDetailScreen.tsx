@@ -5,6 +5,8 @@ import { deleteEntry } from '../db/mutations'
 import { ENTRY_TYPE_LABELS } from '../lib/entryTypes'
 import { formatDate, formatEuro, formatKm } from '../lib/format'
 import { errorMessage } from '../lib/storage'
+import { engine } from '../sync/session'
+import { useVehicles } from '../vehicleContext'
 
 export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; onBack: () => void; onEdit: () => void }) {
   const entry = useLiveQuery(() => db.entries.get(id), [id])
@@ -12,6 +14,8 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
   const doc = useLiveQuery(() => (entry?.documentId != null ? db.documents.get(entry.documentId) : undefined), [entry?.documentId])
   const [url, setUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { canEdit } = useVehicles()
+  const [dl, setDl] = useState<'idle' | 'busy' | 'fail'>('idle')
 
   useEffect(() => {
     if (!doc?.blob) { setUrl(null); return }
@@ -52,6 +56,17 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
         {entry.notes && <div className="py-2"><dt className="text-slate-600 dark:text-slate-400">Notes</dt><dd className="whitespace-pre-wrap">{entry.notes}</dd></div>}
       </dl>
 
+      {doc && !doc.blob && (
+        <section className="card space-y-2">
+          <h3 className="font-semibold">Pièce jointe : {doc.name}</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Ce document vient d'un autre appareil et n'est pas encore sur celui-ci.</p>
+          <button className="btn-secondary w-full" disabled={dl === 'busy'} onClick={async () => {
+            setDl('busy')
+            try { setDl((await engine.downloadDocument(doc.id!)) ? 'idle' : 'fail') } catch { setDl('fail') }
+          }}>{dl === 'busy' ? 'Téléchargement…' : 'Télécharger le document'}</button>
+          {dl === 'fail' && <p role="alert" className="text-sm text-red-700">Téléchargement impossible (hors ligne, ou fichier pas encore envoyé par l'autre appareil).</p>}
+        </section>
+      )}
       {doc && url && (
         <section className="card space-y-2">
           <h3 className="font-semibold">Pièce jointe : {doc.name}</h3>
@@ -64,8 +79,14 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
       )}
 
       {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
-      <button className="btn-primary w-full" onClick={onEdit}>Modifier</button>
-      <button className="btn-danger w-full" onClick={remove}>Supprimer</button>
+      {canEdit(entry.vehicleId) ? (
+        <>
+          <button className="btn-primary w-full" onClick={onEdit}>Modifier</button>
+          <button className="btn-danger w-full" onClick={remove}>Supprimer</button>
+        </>
+      ) : (
+        <p className="card text-sm">Véhicule partagé en lecture seule : modification impossible.</p>
+      )}
     </div>
   )
 }

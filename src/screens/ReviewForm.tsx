@@ -35,7 +35,7 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
   onSkip: () => void
   onCancel: () => void
 }) {
-  const { vehicles, active } = useVehicles()
+  const { writable: vehicles, active } = useVehicles()
   const parsed: ParsedInvoice = useMemo(() => parseInvoice(extraction?.text ?? ''), [extraction])
 
   const matchedVehicle = useMemo(() => {

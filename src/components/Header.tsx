@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useVehicles } from '../vehicleContext'
+import { useAuth, useSyncStatus } from '../sync/hooks'
 
 function useOnline() {
   const [online, setOnline] = useState(navigator.onLine)
@@ -15,6 +16,8 @@ function useOnline() {
 export default function Header({ onManageVehicles }: { onManageVehicles: () => void }) {
   const { vehicles, active, setActiveId } = useVehicles()
   const online = useOnline()
+  const { user } = useAuth()
+  const sync = useSyncStatus()
   return (
     <header
       className="flex items-center gap-2 bg-brand px-4 pb-3 text-white"
@@ -22,6 +25,8 @@ export default function Header({ onManageVehicles }: { onManageVehicles: () => v
     >
       <h1 className="text-lg font-bold">AutoSuivi</h1>
       {!online && <span role="status" className="rounded-full bg-white/25 px-2 py-0.5 text-xs">Hors ligne</span>}
+      {online && user && sync.state === 'syncing' && <span role="status" className="rounded-full bg-white/25 px-2 py-0.5 text-xs">Synchro…</span>}
+      {online && user && sync.state === 'error' && <span role="alert" className="rounded-full bg-red-600 px-2 py-0.5 text-xs">Erreur synchro</span>}
       <div className="ml-auto min-w-0 flex-1 max-w-[60%]">
         {vehicles && vehicles.length > 0 ? (
           <>

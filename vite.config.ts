@@ -37,10 +37,13 @@ export default defineConfig({
           },
         ],
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
       },
     }),
   ],
   build: { chunkSizeWarningLimit: 800 },
+  // En développement (`npm run dev`), l'API est servie par `wrangler dev` (npm run dev:api).
+  server: { proxy: { '/api': 'http://localhost:8787' } },
   test: { environment: 'node' },
 })

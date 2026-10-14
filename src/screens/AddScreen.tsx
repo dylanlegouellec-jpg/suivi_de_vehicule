@@ -1,6 +1,8 @@
 import { useRef } from 'react'
+import { useVehicles } from '../vehicleContext'
 
 export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () => void; onFiles: (files: File[]) => void; onFuel: () => void }) {
+  const { active, canEdit } = useVehicles()
   const cameraRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const multiRef = useRef<HTMLInputElement>(null)
@@ -22,6 +24,11 @@ export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () 
   return (
     <div className="space-y-3">
       <h2 className="text-xl font-bold">Ajouter</h2>
+      {active && !canEdit(active.id) && (
+        <p role="status" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+          « {active.name} » est partagé en lecture seule. Choisissez un autre véhicule dans l'en-tête pour y ajouter des données.
+        </p>
+      )}
       <Option icon="📷" title="Prendre une photo" text="Photographier une facture avec l'appareil photo" onClick={() => cameraRef.current?.click()} />
       <Option icon="📄" title="Choisir un fichier" text="PDF ou image depuis l'iPhone" onClick={() => fileRef.current?.click()} />
       <Option icon="🗂️" title="Import multiple" text="Plusieurs factures d'un coup, vérifiées une par une" onClick={() => multiRef.current?.click()} />

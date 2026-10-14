@@ -25,7 +25,7 @@ export default function RemindersScreen({ onBack, onDone }: {
   onDone: (vehicleId: number, type: RuleType) => void
 }) {
   const items = useReminders()
-  const { vehicles } = useVehicles()
+  const { vehicles, active, canEdit } = useVehicles()
   const [editing, setEditing] = useState<ReminderRule | 'new' | null>(null)
   const [selected, setSelected] = useState<ReminderItem | null>(null)
 
@@ -40,6 +40,7 @@ export default function RemindersScreen({ onBack, onDone }: {
         onBack={() => setSelected(null)}
         onEdit={() => { setEditing(fresh.rule); setSelected(null) }}
         onDone={onDone}
+        readOnly={!canEdit(fresh.rule.vehicleId)}
       />
     )
   }
@@ -52,7 +53,7 @@ export default function RemindersScreen({ onBack, onDone }: {
       <div className="flex items-center gap-2">
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">À faire</h2>
-        <button className="btn-primary ml-auto" onClick={() => setEditing('new')} disabled={!vehicles?.length}>Ajouter</button>
+        <button className="btn-primary ml-auto" onClick={() => setEditing('new')} disabled={!vehicles?.length || !canEdit(active?.id)}>Ajouter</button>
       </div>
 
       {!items || !vehicles ? (
@@ -61,7 +62,7 @@ export default function RemindersScreen({ onBack, onDone }: {
         <EmptyState icon="🚗" title="Aucun véhicule" text="Ajoutez un véhicule pour suivre ses échéances." />
       ) : items.length === 0 ? (
         <EmptyState icon="🔔" title="Aucun rappel" text="Créez les rappels courants (vidange, contrôle technique, pneus, courroie, assurance) avec des intervalles par défaut modifiables.">
-          <button className="btn-primary mt-2" onClick={() => Promise.all(vehicles.map((v) => createDefaultRules(v.id!)))}>
+          <button className="btn-primary mt-2" onClick={() => Promise.all(vehicles.filter((v) => canEdit(v.id)).map((v) => createDefaultRules(v.id!)))}>
             Ajouter les rappels par défaut
           </button>
         </EmptyState>
@@ -81,7 +82,8 @@ export default function RemindersScreen({ onBack, onDone }: {
   )
 }
 
-function RuleDetail({ item, onBack, onEdit, onDone }: {
+function RuleDetail({ item, onBack, onEdit, onDone, readOnly }: {
+  readOnly: boolean
   item: ReminderItem
   onBack: () => void
   onEdit: () => void
@@ -123,11 +125,17 @@ function RuleDetail({ item, onBack, onEdit, onDone }: {
           <dd className="font-medium">{item.lastDate ? formatDate(item.lastDate) : '—'}{item.lastKm != null && ` · ${item.lastKm.toLocaleString('fr-FR')} km`}</dd></div>
       </dl>
       {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
-      <button className="btn-primary w-full" onClick={markDone}>
-        {rule.type === 'personnalise' ? 'Marquer comme fait aujourd\'hui' : 'Enregistrer un entretien'}
-      </button>
-      <button className="btn-secondary w-full" onClick={onEdit}>Modifier la règle</button>
-      <button className="btn-danger w-full" onClick={remove}>Supprimer</button>
+      {readOnly ? (
+        <p className="card text-sm">Véhicule partagé en lecture seule : modification impossible.</p>
+      ) : (
+        <>
+          <button className="btn-primary w-full" onClick={markDone}>
+            {rule.type === 'personnalise' ? 'Marquer comme fait aujourd\'hui' : 'Enregistrer un entretien'}
+          </button>
+          <button className="btn-secondary w-full" onClick={onEdit}>Modifier la règle</button>
+          <button className="btn-danger w-full" onClick={remove}>Supprimer</button>
+        </>
+      )}
     </div>
   )
 }

@@ -11,7 +11,7 @@ import FuelForm from './FuelForm'
 const ConsumptionChart = lazy(() => import('../components/charts/ConsumptionChart'))
 
 export default function FuelScreen({ onBack, startNew }: { onBack: () => void; startNew?: boolean }) {
-  const { vehicles, active } = useVehicles()
+  const { vehicles, active, canEdit } = useVehicles()
   const [editing, setEditing] = useState<FuelLog | 'new' | null>(startNew ? 'new' : null)
   const logs = useLiveQuery(
     () => (active?.id != null ? db.fuelLogs.where('vehicleId').equals(active.id).toArray() : []),
@@ -28,7 +28,7 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
       <div className="flex items-center gap-2">
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">Carburant</h2>
-        <button className="btn-primary ml-auto" onClick={() => setEditing('new')} disabled={!vehicles?.length}>Plein</button>
+        <button className="btn-primary ml-auto" onClick={() => setEditing('new')} disabled={!vehicles?.length || !canEdit(active?.id)}>Plein</button>
       </div>
       {!active ? (
         <EmptyState icon="🚗" title="Aucun véhicule" text="Ajoutez un véhicule pour suivre ses pleins." />
@@ -61,7 +61,7 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
           <ul className="space-y-2">
             {sorted.map((l) => (
               <li key={l.id}>
-                <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={() => setEditing(l)}>
+                <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={() => canEdit(active?.id) && setEditing(l)}>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold">{formatDate(l.date)} · {l.liters.toLocaleString('fr-FR')} L {!l.full && <span className="text-xs font-normal text-slate-500">(partiel)</span>}</p>
                     <p className="truncate text-sm text-slate-600 dark:text-slate-400">
