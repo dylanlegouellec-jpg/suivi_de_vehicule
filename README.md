@@ -64,6 +64,12 @@ Sans compte, `npm run dev` suffit (l'API est alors proxifiée vers `localhost:87
 4. Ouvrez-la une fois avec du réseau et faites une première analyse de document : les ressources OCR (~4 Mo)
    sont alors mises en cache et l'OCR fonctionne ensuite hors ligne.
 
+## Logo et icônes
+
+Logo : une voiture blanche sur fond bleu. Sources vectorielles dans `branding/` ; les icônes PNG (écran d'accueil iPhone,
+app installée, icône « maskable » Android) sont dans `public/`. Pour les régénérer après une modification des SVG :
+`npm i -D playwright && npx playwright install chromium && node scripts/gen-icons.mjs`.
+
 ## Structure
 
 ```

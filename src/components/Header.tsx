@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useVehicles } from '../vehicleContext'
+import { Wordmark } from './Logo'
 import { useAuth, useSyncStatus } from '../sync/hooks'
 
 function useOnline() {
@@ -23,7 +24,7 @@ export default function Header({ onManageVehicles }: { onManageVehicles: () => v
       className="flex items-center gap-2 bg-brand px-4 pb-3 text-white"
       style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)' }}
     >
-      <h1 className="text-lg font-bold">AutoSuivi</h1>
+      <h1 aria-label="AutoSuivi"><Wordmark /></h1>
       {!online && <span role="status" className="rounded-full bg-white/25 px-2 py-0.5 text-xs">Hors ligne</span>}
       {online && user && sync.state === 'syncing' && <span role="status" className="rounded-full bg-white/25 px-2 py-0.5 text-xs">Synchro…</span>}
       {online && user && sync.state === 'error' && <span role="alert" className="rounded-full bg-red-600 px-2 py-0.5 text-xs">Erreur synchro</span>}
