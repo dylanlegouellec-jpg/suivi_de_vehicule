@@ -20,3 +20,20 @@ export function describeDue(r: ReminderResult): string[] {
   }
   return parts
 }
+
+const compactKm = (n: number) => (n >= 10_000 ? `${Math.round(n / 1000)}k` : n >= 1000 ? `${(n / 1000).toFixed(1).replace('.', ',')}k` : String(n))
+
+/**
+ * Valeur courte pour le centre d'une jauge : le critère le plus pressant, en jours ou en km.
+ * Ex. { value: '12', unit: 'j' } (dans 12 jours), { value: '−300', unit: 'km' } (dépassé de 300 km).
+ */
+export function dueShort(r: ReminderResult): { value: string; unit: string } | null {
+  if (r.state === 'unknown') return null
+  const byDays = r.daysLeft != null ? r.daysLeft : null
+  const byKm = r.kmLeft != null ? r.kmLeft : null
+  // Même échelle que le tri : ~40 km par jour
+  const useDays = byDays != null && (byKm == null || byDays <= byKm / 40)
+  if (useDays && byDays != null) return { value: `${byDays < 0 ? '−' : ''}${Math.abs(byDays)}`, unit: 'j' }
+  if (byKm != null) return { value: `${byKm < 0 ? '−' : ''}${compactKm(Math.abs(byKm))}`, unit: 'km' }
+  return null
+}

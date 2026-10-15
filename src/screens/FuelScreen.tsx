@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
 import type { FuelLog } from '../db/schema'
 import EmptyState from '../components/EmptyState'
+import AnimatedNumber from '../ui/AnimatedNumber'
 import { formatDate, formatEuro, formatKm } from '../lib/format'
 import { computeConsumption, pricePerLiter } from '../lib/stats/fuel'
 import { useVehicles } from '../vehicleContext'
@@ -39,10 +40,10 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
       ) : (
         <>
           <section className="card text-center">
-            <p className="text-sm text-slate-600 dark:text-slate-400">Consommation moyenne · {active.name}</p>
-            <p className="text-3xl font-bold">{result.average != null ? `${result.average.toFixed(1).replace('.', ',')} L/100 km` : '—'}</p>
+            <p className="text-sm text-muted">Consommation moyenne · {active.name}</p>
+            <p className="text-3xl font-bold">{result.average != null ? <><AnimatedNumber value={result.average} format={(n) => n.toFixed(1).replace('.', ',')} /> L/100 km</> : '—'}</p>
             {result.average == null && (
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 Il faut au moins deux pleins complets avec kilométrage croissant.
               </p>
             )}
@@ -64,8 +65,8 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
               <li key={l.id}>
                 <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={() => canEdit(active?.id) && setEditing(l)}>
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{formatDate(l.date)} · {l.liters.toLocaleString('fr-FR')} L {!l.full && <span className="text-xs font-normal text-slate-500">(partiel)</span>}</p>
-                    <p className="truncate text-sm text-slate-600 dark:text-slate-400">
+                    <p className="font-semibold">{formatDate(l.date)} · {l.liters.toLocaleString('fr-FR')} L {!l.full && <span className="text-xs font-normal text-muted">(partiel)</span>}</p>
+                    <p className="truncate text-sm text-muted">
                       {pricePerLiter(l).toFixed(3).replace('.', ',')} €/L{l.km != null && ` · ${formatKm(l.km)}`}
                     </p>
                   </div>

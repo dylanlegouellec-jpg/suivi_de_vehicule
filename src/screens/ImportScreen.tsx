@@ -37,7 +37,7 @@ export default function ImportScreen({ files, onDone }: { files: File[]; onDone:
     return (
       <div className="narrow space-y-4 py-8" role="status">
         <p className="text-center font-semibold">Analyse du document {index + 1} / {files.length}</p>
-        <p className="truncate text-center text-sm text-slate-600 dark:text-slate-400">{file.name}</p>
+        <p className="truncate text-center text-sm text-muted">{file.name}</p>
         <ProgressBar value={status.progress} label={status.label} />
         <button className="btn-secondary w-full" onClick={() => finish(saved)}>Annuler</button>
       </div>

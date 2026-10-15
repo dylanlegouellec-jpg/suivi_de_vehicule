@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import { useRef } from 'react'
+import { itemVariants, listVariants } from '../ui/motion'
 import { useVehicles } from '../vehicleContext'
 
 export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () => void; onFiles: (files: File[]) => void; onFuel: () => void }) {
@@ -14,18 +16,18 @@ export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () 
   }
 
   const Option = ({ icon, title, text, onClick }: { icon: string; title: string; text: string; onClick: () => void }) => (
-    <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={onClick}>
+    <motion.button variants={itemVariants} whileTap={{ scale: 0.97 }} whileHover={{ y: -2 }} className="card flex w-full items-center gap-3 text-left" onClick={onClick}>
       <span aria-hidden className="text-3xl">{icon}</span>
       <span><span className="block font-semibold">{title}</span>
-        <span className="text-sm text-slate-600 dark:text-slate-400">{text}</span></span>
-    </button>
+        <span className="text-sm text-muted">{text}</span></span>
+    </motion.button>
   )
 
   return (
-    <div className="narrow space-y-3">
+    <motion.div variants={listVariants} initial="hidden" animate="show" className="narrow space-y-3">
       <h2 className="text-xl font-bold">Ajouter</h2>
       {active && !canEdit(active.id) && (
-        <p role="status" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+        <p role="status" className="rounded-xl bg-warn/15 p-3 text-sm text-fg">
           « {active.name} » est partagé en lecture seule. Choisissez un autre véhicule dans l'en-tête pour y ajouter des données.
         </p>
       )}
@@ -34,13 +36,13 @@ export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () 
       <Option icon="🗂️" title="Import multiple" text="Plusieurs factures d'un coup, vérifiées une par une" onClick={() => multiRef.current?.click()} />
       <Option icon="✍️" title="Saisie manuelle" text="Sans document : entretien, réparation, assurance…" onClick={onManual} />
       <Option icon="⛽" title="Plein de carburant" text="Litres, prix, kilométrage : saisie rapide" onClick={onFuel} />
-      <p className="text-xs text-slate-600 dark:text-slate-400">
+      <p className="text-xs text-muted">
         L'analyse se fait entièrement sur votre appareil. La première reconnaissance de texte (OCR) télécharge les
         ressources de l'application (~4 Mo), puis elle fonctionne hors ligne.
       </p>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handle} />
       <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handle} />
       <input ref={multiRef} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={handle} />
-    </div>
+    </motion.div>
   )
 }

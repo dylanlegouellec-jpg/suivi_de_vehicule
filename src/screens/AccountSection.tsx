@@ -33,7 +33,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
     return (
       <section className="card space-y-3" aria-label="Compte">
         <h2 className="font-semibold">Compte et synchronisation</h2>
-        {notice && <p role="status" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">{notice}</p>}
+        {notice && <p role="status" className="rounded-xl bg-warn/15 p-3 text-sm text-fg">{notice}</p>}
         <p className="text-sm">
           Sans compte, vos données restent uniquement sur cet appareil. Avec un compte, elles se synchronisent entre vos appareils
           (l'app fonctionne toujours hors ligne) et vous pouvez partager un véhicule.
@@ -42,7 +42,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
           <button className="btn-primary" onClick={() => onLogin('login')}>Se connecter</button>
           <button className="btn-secondary" onClick={() => onLogin('register')}>Créer un compte</button>
         </div>
-      <details className="text-xs text-slate-600 dark:text-slate-400">
+      <details className="text-xs text-muted">
         <summary className="min-h-[44px] cursor-pointer py-3">Données personnelles et confidentialité</summary>
         <div className="space-y-1">
           <p>Avec un compte, sont enregistrés sur Cloudflare (base D1 de votre propre déploiement) : votre e-mail, votre nom affiché, une empreinte de votre mot de passe (le mot de passe lui-même ne quitte jamais votre appareil), vos véhicules, entrées, pleins, rappels et documents joints.</p>
@@ -62,32 +62,32 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
   return (
     <section className="card space-y-3" aria-label="Compte">
       <h2 className="font-semibold">Compte et synchronisation</h2>
-      <p className="text-sm">Connecté : <strong>{user.name || user.email}</strong>{user.name && <span className="text-slate-600 dark:text-slate-400"> · {user.email}</span>}</p>
+      <p className="text-sm">Connecté : <strong>{user.name || user.email}</strong>{user.name && <span className="text-muted"> · {user.email}</span>}</p>
       <p className="text-sm" role="status">
         {stateLabel}
-        {lastSync != null && sync.state !== 'syncing' && <span className="text-slate-600 dark:text-slate-400"> · dernière synchro {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(lastSync))}</span>}
-        {sync.pending > 0 && <span className="text-slate-600 dark:text-slate-400"> · {sync.pending} modification(s) en attente</span>}
+        {lastSync != null && sync.state !== 'syncing' && <span className="text-muted"> · dernière synchro {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(lastSync))}</span>}
+        {sync.pending > 0 && <span className="text-muted"> · {sync.pending} modification(s) en attente</span>}
       </p>
-      {sync.error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{sync.error}</p>}
-      {sync.rejected > 0 && <p className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">{sync.rejected} modification(s) refusée(s) par le serveur (droits insuffisants, par exemple en lecture seule).</p>}
+      {sync.error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{sync.error}</p>}
+      {sync.rejected > 0 && <p className="rounded-xl bg-warn/15 p-3 text-sm text-fg">{sync.rejected} modification(s) refusée(s) par le serveur (droits insuffisants, par exemple en lecture seule).</p>}
       <button className="btn-secondary w-full" onClick={() => void syncNow()} disabled={sync.state === 'syncing'}>🔄 Synchroniser maintenant</button>
 
       <div className="grid grid-cols-2 gap-2">
         <button className="btn-secondary" onClick={() => open('join')}>Rejoindre un véhicule</button>
         <button className="btn-secondary" onClick={() => open('password')}>Mot de passe</button>
         <button className="btn-secondary" onClick={() => open('logout')}>Déconnexion</button>
-        <button className="btn-secondary text-red-700 dark:text-red-400" onClick={() => open('delete')}>Supprimer le compte</button>
+        <button className="btn-secondary text-danger" onClick={() => open('delete')}>Supprimer le compte</button>
       </div>
 
       {panel === 'join' && (
-        <form className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { await acceptInvite(a); setPanel(null); return 'Véhicule ajouté.' }) }}>
+        <form className="space-y-2 rounded-xl bg-surface2 p-3" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { await acceptInvite(a); setPanel(null); return 'Véhicule ajouté.' }) }}>
           <label className="label" htmlFor="j-code">Code d'invitation</label>
           <input id="j-code" className="field font-mono uppercase" value={a} onChange={(e) => setA(e.target.value)} placeholder="XXXX-XXXX-XXXX" autoCapitalize="characters" required />
           <button className="btn-primary w-full" disabled={busy}>Rejoindre</button>
         </form>
       )}
       {panel === 'password' && (
-        <form className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { if (b.length < MIN_PASSWORD_LENGTH) throw new Error(`Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`); await changePassword(a, b); setPanel(null); return 'Mot de passe modifié.' }) }}>
+        <form className="space-y-2 rounded-xl bg-surface2 p-3" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(async () => { if (b.length < MIN_PASSWORD_LENGTH) throw new Error(`Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`); await changePassword(a, b); setPanel(null); return 'Mot de passe modifié.' }) }}>
           <label className="label" htmlFor="p-cur">Mot de passe actuel</label>
           <input id="p-cur" type="password" className="field" value={a} onChange={(e) => setA(e.target.value)} autoComplete="current-password" required />
           <label className="label" htmlFor="p-new">Nouveau mot de passe (10 caractères minimum)</label>
@@ -96,7 +96,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
         </form>
       )}
       {panel === 'logout' && (
-        <div className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
+        <div className="space-y-2 rounded-xl bg-surface2 p-3">
           <p className="text-sm">Vos modifications en attente sont envoyées avant la déconnexion.</p>
           <label className="flex min-h-[44px] items-center gap-3 text-sm">
             <input type="checkbox" className="h-6 w-6" checked={wipe} onChange={(e) => setWipe(e.target.checked)} />
@@ -106,7 +106,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
         </div>
       )}
       {panel === 'delete' && (
-        <form className="space-y-2 rounded-xl bg-red-50 p-3 dark:bg-red-950/40" onSubmit={(e: FormEvent) => {
+        <form className="space-y-2 rounded-xl bg-danger/10 p-3" onSubmit={(e: FormEvent) => {
           e.preventDefault()
           if (!window.confirm('Supprimer définitivement votre compte et vos données en ligne ?')) return
           void run(async () => { await deleteAccount(a, { wipe }); setPanel(null) })
@@ -121,7 +121,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
           <button className="btn-danger w-full" disabled={busy}>Supprimer mon compte</button>
         </form>
       )}
-      <details className="text-xs text-slate-600 dark:text-slate-400">
+      <details className="text-xs text-muted">
         <summary className="min-h-[44px] cursor-pointer py-3">Données personnelles et confidentialité</summary>
         <div className="space-y-1">
           <p>Avec un compte, sont enregistrés sur Cloudflare (base D1 de votre propre déploiement) : votre e-mail, votre nom affiché, une empreinte de votre mot de passe (le mot de passe lui-même ne quitte jamais votre appareil), vos véhicules, entrées, pleins, rappels et documents joints.</p>
@@ -129,7 +129,7 @@ export default function AccountSection({ onLogin }: { onLogin: (mode: 'login' | 
           <p>« Supprimer le compte » efface vos données en ligne ; vous pouvez aussi exporter une sauvegarde complète (Réglages).</p>
         </div>
       </details>
-      {result && <p role={result.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${result.ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'}`}>{result.text}</p>}
+      {result && <p role={result.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${result.ok ? 'bg-ok/15 text-fg' : 'bg-danger/15 text-fg'}`}>{result.text}</p>}
     </section>
   )
 }

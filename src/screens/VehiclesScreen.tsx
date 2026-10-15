@@ -7,6 +7,7 @@ import { useVehicles } from '../vehicleContext'
 import EmptyState from '../components/EmptyState'
 import { errorMessage } from '../lib/storage'
 import { formatPlate } from '../lib/plate'
+import PlateInput from '../ui/PlateInput'
 import RegistrationScan from '../components/RegistrationScan'
 import type { ParsedRegistration } from '../lib/parsing/parseRegistration'
 import { LOW_CONFIDENCE } from '../lib/parsing/parseInvoice'
@@ -45,11 +46,11 @@ export default function VehiclesScreen({ onBack, onShare }: { onBack: () => void
         <ul className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
           {vehicles.map((v) => (
             <li key={v.id} className="card flex items-center gap-3">
-              {v.photo ? <PhotoThumb blob={v.photo} /> : <div aria-hidden className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-2xl dark:bg-slate-800">🚗</div>}
+              {v.photo ? <PhotoThumb blob={v.photo} /> : <div aria-hidden className="flex h-14 w-14 items-center justify-center rounded-xl bg-surface2 text-2xl">🚗</div>}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{v.name} {v.id === active?.id && <span className="text-xs text-brand">(actif)</span>}</p>
-                {roleOf(v.id) !== 'owner' && <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Partagé · {roleOf(v.id) === 'viewer' ? 'lecture seule' : 'vous pouvez modifier'}</p>}
-                <p className="truncate text-sm text-slate-600 dark:text-slate-400">
+                {roleOf(v.id) !== 'owner' && <p className="text-xs font-medium text-warn">Partagé · {roleOf(v.id) === 'viewer' ? 'lecture seule' : 'vous pouvez modifier'}</p>}
+                <p className="truncate text-sm text-muted">
                   {[v.brand, v.model, v.plate].filter(Boolean).join(' · ') || FUEL_LABELS[v.fuel]}
                   {v.mileage != null && ` · ${formatKm(v.mileage)}`}
                 </p>
@@ -168,7 +169,7 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
         <div><label className="label" htmlFor="v-year">Année</label>
           <input id="v-year" className="field" type="number" inputMode="numeric" min={1900} max={2100} value={d.year ?? ''} onChange={(e) => set('year', toNum(e.target.value))} /></div>
         <div><label className="label" htmlFor="v-plate">Plaque</label>
-          <input id="v-plate" className="field uppercase" value={d.plate} onChange={(e) => set('plate', formatPlate(e.target.value))} placeholder="AB-123-CD" autoCapitalize="characters" autoCorrect="off" spellCheck={false} autoComplete="off" /></div>
+          <PlateInput id="v-plate" value={d.plate} onChange={(v) => set('plate', v)} /></div>
       </div>
       <div><label className="label" htmlFor="v-fuel">Carburant</label>
         <select id="v-fuel" className="field" value={d.fuel} onChange={(e) => set('fuel', e.target.value as Fuel)}>
@@ -186,9 +187,9 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
           const f = e.target.files?.[0]
           if (f) { const small = await downscaleToJpeg(f); setD((p) => ({ ...p, photo: small, photoVersion: Date.now() })) }
         }} />
-        {d.photo && <button type="button" className="mt-1 text-sm text-red-600 underline" onClick={() => setD((p) => ({ ...p, photo: null, photoVersion: null }))}>Retirer la photo</button>}</div>
+        {d.photo && <button type="button" className="mt-1 text-sm text-danger underline" onClick={() => setD((p) => ({ ...p, photo: null, photoVersion: null }))}>Retirer la photo</button>}</div>
 
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p key={error} role="alert" className="shake rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
 
       <button className="btn-primary w-full" disabled={busy}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>
       {initial.id != null && roleOf(initial.id) === 'owner' && <button type="button" className="btn-danger w-full" onClick={remove}>Supprimer ce véhicule</button>}

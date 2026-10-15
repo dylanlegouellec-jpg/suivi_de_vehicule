@@ -36,7 +36,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
   }
 
   const Row = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex justify-between gap-4 py-2"><dt className="text-slate-600 dark:text-slate-400">{label}</dt><dd className="text-right font-medium">{value}</dd></div>
+    <div className="flex justify-between gap-4 py-2"><dt className="text-muted">{label}</dt><dd className="text-right font-medium">{value}</dd></div>
   )
 
   return (
@@ -45,7 +45,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">{ENTRY_TYPE_LABELS[entry.type]}</h2>
       </div>
-      <dl className="card divide-y divide-slate-200 dark:divide-slate-800">
+      <dl className="card divide-y divide-line">
         <Row label="Date" value={formatDate(entry.date)} />
         <Row label="Montant TTC" value={entry.amount != null ? formatEuro(entry.amount) : '—'} />
         {entry.amountHT != null && <Row label="Montant HT" value={formatEuro(entry.amountHT)} />}
@@ -53,18 +53,18 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
         <Row label="Kilométrage" value={entry.km != null ? formatKm(entry.km) : '—'} />
         <Row label="Garage" value={entry.garage || '—'} />
         <Row label="Véhicule" value={vehicle?.name ?? '—'} />
-        {entry.notes && <div className="py-2"><dt className="text-slate-600 dark:text-slate-400">Notes</dt><dd className="whitespace-pre-wrap">{entry.notes}</dd></div>}
+        {entry.notes && <div className="py-2"><dt className="text-muted">Notes</dt><dd className="whitespace-pre-wrap">{entry.notes}</dd></div>}
       </dl>
 
       {doc && !doc.blob && (
         <section className="card space-y-2">
           <h3 className="font-semibold">Pièce jointe : {doc.name}</h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">Ce document vient d'un autre appareil et n'est pas encore sur celui-ci.</p>
+          <p className="text-sm text-muted">Ce document vient d'un autre appareil et n'est pas encore sur celui-ci.</p>
           <button className="btn-secondary w-full" disabled={dl === 'busy'} onClick={async () => {
             setDl('busy')
             try { setDl((await engine.downloadDocument(doc.id!)) ? 'idle' : 'fail') } catch { setDl('fail') }
           }}>{dl === 'busy' ? 'Téléchargement…' : 'Télécharger le document'}</button>
-          {dl === 'fail' && <p role="alert" className="text-sm text-red-700">Téléchargement impossible (hors ligne, ou fichier pas encore envoyé par l'autre appareil).</p>}
+          {dl === 'fail' && <p role="alert" className="text-sm text-danger">Téléchargement impossible (hors ligne, ou fichier pas encore envoyé par l'autre appareil).</p>}
         </section>
       )}
       {doc && url && (
@@ -78,7 +78,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
         </section>
       )}
 
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       {canEdit(entry.vehicleId) ? (
         <>
           <button className="btn-primary w-full" onClick={onEdit}>Modifier</button>

@@ -92,3 +92,20 @@ export function groupReminders<T extends ReminderResult>(items: T[]): Record<Rem
   for (const it of sortReminders(items)) out[it.state].push(it)
   return out
 }
+
+const DAYS_PER_MONTH = 30.44
+
+/**
+ * Avancement vers l'échéance, de 0 (vient d'être fait) à 1 (échéance atteinte ou dépassée) :
+ * le plus avancé des deux critères (date, kilométrage). null si l'échéance est inconnue.
+ * Sert à remplir les jauges circulaires.
+ */
+export function reminderProgress(r: ReminderResult): number | null {
+  if (r.state === 'unknown') return null
+  if (r.state === 'overdue') return 1
+  const parts: number[] = []
+  if (r.daysLeft != null && r.rule.everyMonths) parts.push(1 - r.daysLeft / (r.rule.everyMonths * DAYS_PER_MONTH))
+  if (r.kmLeft != null && r.rule.everyKm) parts.push(1 - r.kmLeft / r.rule.everyKm)
+  if (!parts.length) return 0
+  return Math.max(0, Math.min(1, Math.max(...parts)))
+}

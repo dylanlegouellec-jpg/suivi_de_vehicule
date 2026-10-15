@@ -70,7 +70,7 @@ export default function RemindersScreen({ onBack, onDone }: {
         SECTIONS.map(({ key, title }) =>
           groups![key].length > 0 && (
             <section key={key} aria-label={title} className="space-y-2">
-              <h3 className="font-semibold">{title} <span className="text-slate-500">({groups![key].length})</span></h3>
+              <h3 className="font-semibold">{title} <span className="text-muted">({groups![key].length})</span></h3>
               <div className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
                 {groups![key].map((it) => (
                   <ReminderCard key={it.rule.id} item={it} showVehicle={multi} onClick={() => setSelected(it)} />
@@ -126,7 +126,7 @@ function RuleDetail({ item, onBack, onEdit, onDone, readOnly }: {
         <div className="flex justify-between"><dt>Dernière fois</dt>
           <dd className="font-medium">{item.lastDate ? formatDate(item.lastDate) : '—'}{item.lastKm != null && ` · ${item.lastKm.toLocaleString('fr-FR')} km`}</dd></div>
       </dl>
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       {readOnly ? (
         <p className="card text-sm">Véhicule partagé en lecture seule : modification impossible.</p>
       ) : (
@@ -211,7 +211,7 @@ function RuleForm({ rule, onClose }: { rule?: ReminderRule; onClose: () => void 
       <div><label className="label" htmlFor="rr-label">Nom</label>
         <input id="rr-label" className="field" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Ex. Filtre à pollen" /></div>
       {isCT ? (
-        <p className="rounded-xl bg-slate-100 p-3 text-sm dark:bg-slate-800">
+        <p className="rounded-xl bg-surface2 p-3 text-sm">
           Règle française : 1re échéance 4 ans après la mise en circulation (date à renseigner sur la fiche véhicule),
           puis tous les 2 ans à partir du dernier contrôle enregistré.
         </p>
@@ -225,7 +225,7 @@ function RuleForm({ rule, onClose }: { rule?: ReminderRule; onClose: () => void 
       )}
       <fieldset className="card space-y-3">
         <legend className="px-1 text-sm font-semibold">Dernière fois (optionnel)</legend>
-        <p className="text-xs text-slate-600 dark:text-slate-400">
+        <p className="text-xs text-muted">
           Utile sans historique. Si une entrée du même type est plus récente, c'est elle qui est utilisée.
         </p>
         <div><label className="label" htmlFor="rr-bdate">Date</label>
@@ -233,7 +233,7 @@ function RuleForm({ rule, onClose }: { rule?: ReminderRule; onClose: () => void 
         <div><label className="label" htmlFor="rr-bkm">Kilométrage</label>
           <input id="rr-bkm" className="field" inputMode="numeric" value={baseKm} onChange={(e) => setBaseKm(e.target.value)} /></div>
       </fieldset>
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       <button className="btn-primary w-full">Enregistrer</button>
       {rule && <button type="button" className="btn-danger w-full" onClick={remove}>Supprimer</button>}
     </form>

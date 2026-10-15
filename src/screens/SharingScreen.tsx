@@ -59,17 +59,17 @@ export default function SharingScreen({ vehicle, onBack }: { vehicle: Vehicle; o
         <h2 className="text-xl font-bold">Partager « {vehicle.name} »</h2>
       </div>
 
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
 
       <section className="card space-y-2" aria-label="Membres">
         <h3 className="font-semibold">Personnes ayant accès</h3>
         {!members ? <p role="status" className="text-sm">Chargement…</p> : (
-          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+          <ul className="divide-y divide-line">
             {members.map((m) => (
               <li key={m.id} className="flex items-center gap-2 py-2">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{m.name || m.email}{m.id === user.id && ' (vous)'}</p>
-                  <p className="truncate text-sm text-slate-600 dark:text-slate-400">{m.name ? `${m.email} · ` : ''}{ROLE_LABEL[m.role]}</p>
+                  <p className="truncate text-sm text-muted">{m.name ? `${m.email} · ` : ''}{ROLE_LABEL[m.role]}</p>
                 </div>
                 {m.role !== 'owner' && (myRole === 'owner' || m.id === user.id) && (
                   <button className="btn-secondary" disabled={busy} onClick={() => {
@@ -90,7 +90,7 @@ export default function SharingScreen({ vehicle, onBack }: { vehicle: Vehicle; o
       {myRole === 'owner' ? (
         <section className="card space-y-3" aria-label="Inviter">
           <h3 className="font-semibold">Inviter quelqu'un</h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-muted">
             Créez un code à usage unique (valable 7 jours) et transmettez-le à la personne : elle le saisit dans AutoSuivi
             (Véhicules → Rejoindre avec un code) après avoir créé son compte.
           </p>
@@ -103,7 +103,7 @@ export default function SharingScreen({ vehicle, onBack }: { vehicle: Vehicle; o
             setInvite(await api.json('POST', `/api/vehicles/${vehicle.uid}/invites`, { role: inviteRole }))
           })}>Créer un code d'invitation</button>
           {invite && (
-            <div className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800" role="status">
+            <div className="space-y-2 rounded-xl bg-surface2 p-3" role="status">
               <p className="text-center font-mono text-2xl font-bold tracking-widest">{invite.code}</p>
               <p className="text-center text-xs">{ROLE_LABEL[invite.role as 'editor' | 'viewer']} · expire le {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long' }).format(new Date(invite.expiresAt))}</p>
               <button className="btn-secondary w-full" onClick={() => {

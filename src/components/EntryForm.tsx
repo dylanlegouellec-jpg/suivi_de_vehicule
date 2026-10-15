@@ -6,6 +6,8 @@ import { ENTRY_TYPES, ENTRY_TYPE_LABELS } from '../lib/entryTypes'
 import { findDuplicate } from '../lib/entries'
 import { formatDate, formatEuro, parseDecimal, todayIso } from '../lib/format'
 import { errorMessage } from '../lib/storage'
+import { fireConfetti } from '../ui/Confetti'
+import { toast } from '../ui/Toast'
 import { useVehicles } from '../vehicleContext'
 
 export default function EntryForm({ entry, defaults, onClose, onSaved }: {
@@ -50,7 +52,10 @@ export default function EntryForm({ entry, defaults, onClose, onSaved }: {
           return
         }
       }
-      onSaved(await saveEntry(data, { id: entry?.id }))
+      const savedId = await saveEntry(data, { id: entry?.id })
+      toast(entry ? 'Entrée mise à jour' : 'Entrée enregistrée')
+      if (!entry) fireConfetti()
+      onSaved(savedId)
     } catch (e) {
       setError(errorMessage(e))
       setBusy(false)
@@ -89,12 +94,12 @@ export default function EntryForm({ entry, defaults, onClose, onSaved }: {
         <textarea id="e-notes" className="field py-2" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
 
       {dupWarning && (
-        <div role="alert" className="space-y-2 rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+        <div role="alert" className="space-y-2 rounded-xl bg-warn/15 p-3 text-sm text-fg">
           <p>⚠️ Doublon possible : {dupWarning}</p>
           <button type="button" className="btn-secondary w-full" onClick={() => void save(true)}>Enregistrer quand même</button>
         </div>
       )}
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p key={error} role="alert" className="shake rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       <button className="btn-primary w-full" disabled={busy}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>
     </form>
   )

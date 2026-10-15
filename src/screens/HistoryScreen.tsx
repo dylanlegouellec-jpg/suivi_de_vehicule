@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../db/db'
@@ -7,9 +8,13 @@ import { ENTRY_TYPES, ENTRY_TYPE_LABELS } from '../lib/entryTypes'
 import { emptyFilters, filterEntries, sortEntries, type SortKey } from '../lib/entries'
 import { formatDate, formatEuro, formatKm } from '../lib/format'
 import { useVehicles } from '../vehicleContext'
+import { deleteEntry } from '../db/mutations'
+import { itemVariants, listVariants } from '../ui/motion'
+import SwipeRow from '../ui/SwipeRow'
+import { toast } from '../ui/Toast'
 
 export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) => void; onAdd: () => void }) {
-  const { vehicles, active } = useVehicles()
+  const { vehicles, active, canEdit } = useVehicles()
   const [vehicleId, setVehicleId] = useState<number | 'all' | null>(null) // null = véhicule actif
   const [filters, setFilters] = useState(emptyFilters())
   const [sort, setSort] = useState<SortKey>('date_desc')
@@ -84,27 +89,33 @@ export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) 
         )
       ) : (
         <>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-muted">
             {rows.length} entrée{rows.length > 1 ? 's' : ''} · total {formatEuro(total)}
           </p>
-          <ul className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
+          <motion.ul key={`${effectiveVehicle}-${sort}`} variants={listVariants} initial="hidden" animate="show" className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
             {rows.map((e) => (
-              <li key={e.id}>
+              <motion.li key={e.id} variants={itemVariants}>
+                <SwipeRow disabled={!canEdit(e.vehicleId)} onDelete={async () => {
+                  if (!window.confirm('Supprimer définitivement cette entrée et sa pièce jointe ?')) return
+                  await deleteEntry(e.id!)
+                  toast('Entrée supprimée')
+                }}>
                 <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={() => onOpen(e.id!)}>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">
                       {ENTRY_TYPE_LABELS[e.type]}{e.documentId != null && <span aria-label="pièce jointe"> 📎</span>}
                     </p>
-                    <p className="truncate text-sm text-slate-600 dark:text-slate-400">
+                    <p className="truncate text-sm text-muted">
                       {formatDate(e.date)}{e.garage && ` · ${e.garage}`}{e.km != null && ` · ${formatKm(e.km)}`}
                       {effectiveVehicle === 'all' && ` · ${vehicleName(e.vehicleId)}`}
                     </p>
                   </div>
                   <span className="font-semibold">{e.amount != null ? formatEuro(e.amount) : '—'}</span>
                 </button>
-              </li>
+                </SwipeRow>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         </>
       )}
     </div>

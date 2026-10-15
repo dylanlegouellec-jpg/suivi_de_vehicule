@@ -50,7 +50,7 @@ export default function RegistrationScan({ photo, onPhoto, onRecognized }: {
   return (
     <section className="card space-y-3" aria-label="Carte grise">
       <h3 className="font-semibold">Carte grise</h3>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
+      <p className="text-sm text-muted">
         Photographiez la carte grise : la fiche se remplit toute seule (marque, modèle, plaque, date de mise en circulation,
         carburant, VIN) et la photo est gardée dans l'app. La lecture se fait sur votre appareil.
       </p>
@@ -67,14 +67,14 @@ export default function RegistrationScan({ photo, onPhoto, onRecognized }: {
 
       {photo && url && !status && (
         <div className="flex items-center gap-3">
-          <a href={url} target="_blank" rel="noreferrer"><img src={url} alt="Carte grise" className="h-16 w-24 rounded-lg object-cover ring-1 ring-slate-300 dark:ring-slate-700" /></a>
+          <a href={url} target="_blank" rel="noreferrer"><img src={url} alt="Carte grise" className="h-16 w-24 rounded-lg object-cover ring-1 ring-line" /></a>
           <div className="flex flex-col items-start">
             <a className="min-h-[44px] py-3 text-sm text-brand underline" href={url} target="_blank" rel="noreferrer">Voir la carte grise</a>
-            <button type="button" className="min-h-[44px] text-sm text-red-600 underline" onClick={() => { onPhoto(null); setMessage(null) }}>Retirer la photo</button>
+            <button type="button" className="min-h-[44px] text-sm text-danger underline" onClick={() => { onPhoto(null); setMessage(null) }}>Retirer la photo</button>
           </div>
         </div>
       )}
-      {message && <p role={message.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${message.ok ? 'bg-green-100 text-green-900' : 'bg-red-100 text-red-900'}`}>{message.text}</p>}
+      {message && <p role={message.ok ? 'status' : 'alert'} className={`rounded-xl p-3 text-sm ${message.ok ? 'bg-ok/15 text-fg' : 'bg-danger/15 text-fg'}`}>{message.text}</p>}
     </section>
   )
 }

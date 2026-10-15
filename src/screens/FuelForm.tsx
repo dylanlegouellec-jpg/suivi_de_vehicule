@@ -103,15 +103,15 @@ export default function FuelForm({ log, onClose, onSaved }: { log?: FuelLog; onC
         <div><label className="label" htmlFor="f-total">Total (€)</label>
           <input id="f-total" className="field" inputMode="decimal" value={total} onChange={(e) => onTotal(e.target.value)} placeholder="0,00" /></div>
       </div>
-      {t != null && t > 0 && <p className="text-sm text-slate-600 dark:text-slate-400">Total : {formatEuro(t)}</p>}
+      {t != null && t > 0 && <p className="text-sm text-muted">Total : {formatEuro(t)}</p>}
       <div><label className="label" htmlFor="f-km">Kilométrage</label>
         <input id="f-km" className="field" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value)} /></div>
-      {kmWarning && <p role="alert" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">⚠️ {kmWarning} Vous pouvez tout de même enregistrer.</p>}
+      {kmWarning && <p role="alert" className="rounded-xl bg-warn/15 p-3 text-sm text-fg">⚠️ {kmWarning} Vous pouvez tout de même enregistrer.</p>}
       <label className="flex min-h-[44px] items-center gap-3">
         <input type="checkbox" className="h-6 w-6" checked={full} onChange={(e) => setFull(e.target.checked)} />
-        <span>Plein complet <span className="text-sm text-slate-600 dark:text-slate-400">(réservoir rempli à ras)</span></span>
+        <span>Plein complet <span className="text-sm text-muted">(réservoir rempli à ras)</span></span>
       </label>
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       <button className="btn-primary w-full" disabled={busy}>{busy ? 'Enregistrement…' : 'Enregistrer'}</button>
       {log && <button type="button" className="btn-danger w-full" onClick={remove}>Supprimer</button>}
     </form>

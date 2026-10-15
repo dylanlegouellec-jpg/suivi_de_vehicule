@@ -99,13 +99,13 @@ export default function BackupSection() {
       <button className="btn-primary w-full" onClick={exportJson} disabled={disabled}>
         {busy === 'json' ? 'Préparation…' : '💾 Exporter une sauvegarde complète'}
       </button>
-      <p className="text-xs text-slate-600 dark:text-slate-400">Fichier JSON avec toutes vos données et pièces jointes. Enregistrez-le dans Fichiers ou iCloud Drive.</p>
+      <p className="text-xs text-muted">Fichier JSON avec toutes vos données et pièces jointes. Enregistrez-le dans Fichiers ou iCloud Drive.</p>
 
       <button className="btn-secondary w-full" onClick={() => fileRef.current?.click()} disabled={disabled}>📥 Importer une sauvegarde</button>
       <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onPick} />
 
       {pending && (
-        <div role="group" aria-label="Choix d'import" className="space-y-2 rounded-xl bg-slate-100 p-3 dark:bg-slate-800">
+        <div role="group" aria-label="Choix d'import" className="space-y-2 rounded-xl bg-surface2 p-3">
           <p className="text-sm">Sauvegarde lue : {counts(pending)}.</p>
           <button className="btn-primary w-full" onClick={doMerge} disabled={disabled}>Fusionner avec mes données</button>
           <button className="btn-danger w-full" onClick={doReplace} disabled={disabled}>Remplacer toutes mes données</button>
@@ -113,7 +113,7 @@ export default function BackupSection() {
         </div>
       )}
 
-      <hr className="border-slate-200 dark:border-slate-800" />
+      <hr className="border-line" />
       <div className="grid grid-cols-2 gap-2">
         <button className="btn-secondary" onClick={() => exportCsv('entries')} disabled={disabled}>CSV historique</button>
         <button className="btn-secondary" onClick={() => exportCsv('fuel')} disabled={disabled}>CSV carburant</button>
@@ -134,7 +134,7 @@ export default function BackupSection() {
 
       {msg && (
         <p role={msg.kind === 'error' ? 'alert' : 'status'}
-          className={`rounded-xl p-3 text-sm ${msg.kind === 'error' ? 'bg-red-100 text-red-900' : 'bg-green-100 text-green-900'}`}>
+          className={`rounded-xl p-3 text-sm ${msg.kind === 'error' ? 'bg-danger/15 text-fg' : 'bg-ok/15 text-fg'}`}>
           {msg.text}
         </p>
       )}

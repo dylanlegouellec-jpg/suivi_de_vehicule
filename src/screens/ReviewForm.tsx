@@ -8,6 +8,7 @@ import { mimeOf, type ExtractResult } from '../lib/extract'
 import { formatDate, formatEuro, parseDecimal, todayIso } from '../lib/format'
 import { LOW_CONFIDENCE, parseInvoice, type Field, type ParsedInvoice } from '../lib/parsing/parseInvoice'
 import { errorMessage } from '../lib/storage'
+import PlateInput from '../ui/PlateInput'
 import { formatPlate } from '../lib/plate'
 import { useVehicles } from '../vehicleContext'
 
@@ -17,10 +18,10 @@ const str = (n: number | null) => (n == null ? '' : String(n).replace('.', ','))
 
 function Row({ label, htmlFor, low, children }: { label: string; htmlFor: string; low: boolean; children: ReactNode }) {
   return (
-    <div className={low ? 'rounded-xl bg-amber-50 p-2 ring-2 ring-amber-400 dark:bg-amber-950/40' : 'p-2'}>
+    <div className={low ? 'rounded-xl bg-warn/10 p-2 ring-2 ring-warn/60' : 'p-2'}>
       <label className="label flex justify-between" htmlFor={htmlFor}>
         <span>{label}</span>
-        {low && <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">À vérifier</span>}
+        {low && <span className="text-xs font-semibold text-warn">À vérifier</span>}
       </label>
       {children}
     </div>
@@ -120,12 +121,12 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onCancel} aria-label="Annuler l'import">✕</button>
         <h2 className="text-xl font-bold">Vérifier le document</h2>
-        {position.total > 1 && <span className="ml-auto text-sm text-slate-600 dark:text-slate-400">{position.index + 1} / {position.total}</span>}
+        {position.total > 1 && <span className="ml-auto text-sm text-muted">{position.index + 1} / {position.total}</span>}
       </div>
 
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error} Vous pouvez saisir les informations à la main : le document sera tout de même joint.</p>}
+      {error && <p role="alert" className="shake rounded-xl bg-danger/15 p-3 text-sm text-fg">{error} Vous pouvez saisir les informations à la main : le document sera tout de même joint.</p>}
       {!error && extraction && (
-        <p className="rounded-xl bg-slate-100 p-3 text-sm dark:bg-slate-800">
+        <p className="rounded-xl bg-surface2 p-3 text-sm">
           {extraction.ocrUsed ? 'Texte reconnu par OCR : ' : 'Texte lu dans le PDF : '}
           vérifiez chaque champ, les cases jaunes sont incertaines. Rien n'est enregistré avant votre validation.
         </p>
@@ -140,7 +141,7 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
                 <img src={previewUrl} alt="Aperçu du document" className="max-h-[45vh] w-full rounded-xl object-contain md:max-h-[70vh]" />
               </a>
             ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-400">Aucun aperçu disponible.</p>
+              <p className="text-sm text-muted">Aucun aperçu disponible.</p>
             )}
             {pdfUrl && <a className="btn-secondary mt-2 w-full" href={pdfUrl} target="_blank" rel="noreferrer">Ouvrir le PDF complet</a>}
           </details>
@@ -182,8 +183,8 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
             <input id="r-km" className="field" inputMode="numeric" value={km} onChange={(e) => setKm(e.target.value)} />
           </Row>
           <Row label="Plaque détectée" htmlFor="r-plate" low={plate !== '' && isLow(parsed.plate)}>
-            <input id="r-plate" className="field uppercase" value={plate} onChange={(e) => setPlate(formatPlate(e.target.value))} autoCapitalize="characters" autoCorrect="off" spellCheck={false} />
-            {plateMismatch && <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">⚠️ Cette plaque ne correspond pas au véhicule sélectionné.</p>}
+            <PlateInput id="r-plate" value={plate} onChange={setPlate} />
+            {plateMismatch && <p className="mt-1 text-sm text-warn">⚠️ Cette plaque ne correspond pas au véhicule sélectionné.</p>}
           </Row>
           <Row label="Garage" htmlFor="r-garage" low={isLow(parsed.garage)}>
             <input id="r-garage" className="field" value={garage} onChange={(e) => setGarage(e.target.value)} />
@@ -193,12 +194,12 @@ export default function ReviewForm({ file, extraction, error, position, onSaved,
           </Row>
 
           {dupWarning && (
-            <div role="alert" className="space-y-2 rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+            <div role="alert" className="space-y-2 rounded-xl bg-warn/15 p-3 text-sm text-fg">
               <p>⚠️ Doublon possible : {dupWarning}</p>
               <button type="button" className="btn-secondary w-full" onClick={() => void save(true)}>Enregistrer quand même</button>
             </div>
           )}
-          {formError && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{formError}</p>}
+          {formError && <p role="alert" className="shake rounded-xl bg-danger/15 p-3 text-sm text-fg">{formError}</p>}
 
           <div className="space-y-2 p-2">
             <button className="btn-primary w-full" disabled={busy}>{busy ? 'Enregistrement…' : 'Valider et enregistrer'}</button>

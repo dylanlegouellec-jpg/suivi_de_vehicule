@@ -3,11 +3,13 @@ import { formatEuro } from '../../lib/format'
 import type { MonthCost } from '../../lib/stats/stats'
 import ChartTooltip from './ChartTooltip'
 
+import { useReducedMotion } from '../../ui/theme'
 const tick = { fill: 'var(--viz-text-secondary)', fontSize: 12 }
 const MONTH = new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' })
 const label = (k: string) => MONTH.format(new Date(`${k}-01T00:00:00`))
 
 export default function MonthlyChart({ data }: { data: MonthCost[] }) {
+  const reduced = useReducedMotion()
   return (
     <section className="card viz-root" aria-label="Coût par mois">
       <h3 className="mb-2 font-semibold">Coût par mois</h3>
@@ -27,7 +29,7 @@ export default function MonthlyChart({ data }: { data: MonthCost[] }) {
                 ) : null
               }
             />
-            <Bar dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            <Bar isAnimationActive={!reduced} animationDuration={900} dataKey="total" fill="var(--series-1)" radius={[4, 4, 0, 0]} maxBarSize={28} />
           </BarChart>
         </ResponsiveContainer>
       </div>

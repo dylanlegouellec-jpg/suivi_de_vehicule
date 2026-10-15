@@ -10,6 +10,8 @@ import {
   presetPeriod, totalCost, type PeriodPreset,
 } from '../lib/stats/stats'
 import { useVehicles } from '../vehicleContext'
+import AnimatedNumber from '../ui/AnimatedNumber'
+import { motion } from 'framer-motion'
 
 const MonthlyChart = lazy(() => import('../components/charts/MonthlyChart'))
 const ConsumptionChart = lazy(() => import('../components/charts/ConsumptionChart'))
@@ -78,10 +80,10 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
       ) : (
         <div className="space-y-3 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
           <section className="grid grid-cols-2 gap-3 desktop:col-span-2" aria-label="Indicateurs">
-            <div className="card"><p className="text-sm text-slate-600 dark:text-slate-400">Coût total</p><p className="text-2xl font-bold">{formatEuro(view.total)}</p></div>
-            <div className="card"><p className="text-sm text-slate-600 dark:text-slate-400">Coût au km</p>
-              <p className="text-2xl font-bold">{view.perKm != null ? formatEuro(view.perKm) : '—'}</p>
-              <p className="text-xs text-slate-600 dark:text-slate-400">{view.distance > 0 ? `sur ${formatNumber(view.distance)} km` : 'kilométrage insuffisant'}</p></div>
+            <div className="card"><p className="text-sm text-muted">Coût total</p><p className="text-2xl font-bold"><AnimatedNumber value={view.total} format={formatEuro} /></p></div>
+            <div className="card"><p className="text-sm text-muted">Coût au km</p>
+              <p className="text-2xl font-bold">{view.perKm != null ? <AnimatedNumber value={view.perKm} format={formatEuro} /> : '—'}</p>
+              <p className="text-xs text-muted">{view.distance > 0 ? `sur ${formatNumber(view.distance)} km` : 'kilométrage insuffisant'}</p></div>
           </section>
 
           <div className="desktop:col-span-2">
@@ -92,7 +94,7 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
 
           <section className="card" aria-label="Coût par an">
             <h3 className="mb-2 font-semibold">Coût par année</h3>
-            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            <ul className="divide-y divide-line">
               {view.years.map((y) => <li key={y.year} className="flex justify-between py-2"><span>{y.year}</span><strong>{formatEuro(y.total)}</strong></li>)}
             </ul>
           </section>
@@ -104,10 +106,10 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
                 <li key={c.category}>
                   <div className="mb-1 flex justify-between text-sm">
                     <span>{CATEGORY_LABELS[c.category]}</span>
-                    <span><strong>{formatEuro(c.total)}</strong> <span className="text-slate-600 dark:text-slate-400">· {Math.round(c.share * 100)} %</span></span>
+                    <span><strong>{formatEuro(c.total)}</strong> <span className="text-muted">· {Math.round(c.share * 100)} %</span></span>
                   </div>
-                  <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden>
-                    <div className="h-3 rounded-full" style={{ width: `${Math.max(2, c.share * 100)}%`, background: `var(--cat-${c.category})` }} />
+                  <div className="h-3 rounded-full bg-surface2" aria-hidden>
+                    <motion.div className="h-3 rounded-full" initial={{ width: 0 }} animate={{ width: `${Math.max(2, c.share * 100)}%` }} transition={{ type: 'spring', stiffness: 120, damping: 20, delay: 0.2 }} style={{ background: `var(--cat-${c.category})` }} />
                   </div>
                 </li>
               ))}
@@ -115,13 +117,13 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
           </section>
 
           {selected === 'all' ? (
-            <p className="card text-sm text-slate-600 dark:text-slate-400">Choisissez un véhicule pour voir l'évolution de sa consommation.</p>
+            <p className="card text-sm text-muted">Choisissez un véhicule pour voir l'évolution de sa consommation.</p>
           ) : view.consumption && view.consumption.segments.filter((s) => s.valid).length >= 2 ? (
             <Suspense fallback={<p role="status">Chargement du graphique…</p>}>
               <ConsumptionChart segments={view.consumption.segments.filter((s) => s.valid)} />
             </Suspense>
           ) : (
-            <p className="card text-sm text-slate-600 dark:text-slate-400">
+            <p className="card text-sm text-muted">
               Consommation : il faut au moins trois pleins complets avec kilométrage sur la période pour tracer une évolution.
             </p>
           )}

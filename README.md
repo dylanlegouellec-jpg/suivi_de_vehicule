@@ -72,6 +72,12 @@ Sans compte, `npm run dev` suffit (l'API est alors proxifiée vers `localhost:87
   carburant, rappels, réglages) s'affichent sur deux colonnes ; les formulaires restent en colonne étroite pour rester lisibles.
 - Les marges tiennent compte de l'encoche de l'iPhone en paysage.
 
+## Thèmes et animations
+
+Trois thèmes au choix dans **Réglages → Apparence** (Cockpit par défaut) : **Cockpit** (carbone et ambre, compteur à rouleaux), **Aurora** (verre dépoli sur lumières mouvantes), **Fluide** (clair, dégradés doux). Le changement se fait avec un effet de révélation circulaire.
+
+Animations avec Framer Motion : transitions de pages directionnelles, compteur kilométrique, jauges d'échéances, chiffres qui défilent, glisser pour supprimer, tirer pour synchroniser, confettis à l'enregistrement. Réglage **Animations** : Auto (suit « Réduire les animations » de l'appareil), Complètes ou Réduites ; en mode réduit, tout devient instantané.
+
 ## Logo et icônes
 
 Logo : une voiture blanche sur fond bleu. Sources vectorielles dans `branding/` ; les icônes PNG (écran d'accueil iPhone,

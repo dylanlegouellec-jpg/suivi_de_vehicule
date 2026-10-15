@@ -3,9 +3,11 @@ import type { ConsumptionSegment } from '../../lib/stats/fuel'
 import { formatDate } from '../../lib/format'
 import ChartTooltip from './ChartTooltip'
 
+import { useReducedMotion } from '../../ui/theme'
 const tick = { fill: 'var(--viz-text-secondary)', fontSize: 12 }
 
 export default function ConsumptionChart({ segments }: { segments: ConsumptionSegment[] }) {
+  const reduced = useReducedMotion()
   const data = segments.map((s) => ({ date: s.date, v: Number(s.lPer100.toFixed(2)) }))
   return (
     <section className="card viz-root" aria-label="Évolution de la consommation">
@@ -27,7 +29,7 @@ export default function ConsumptionChart({ segments }: { segments: ConsumptionSe
                 ) : null
               }
             />
-            <Line type="monotone" dataKey="v" stroke="var(--series-1)" strokeWidth={2}
+            <Line isAnimationActive={!reduced} animationDuration={1000} type="monotone" dataKey="v" stroke="var(--series-1)" strokeWidth={2}
               dot={{ r: 4, fill: 'var(--series-1)', stroke: 'var(--viz-surface)', strokeWidth: 2 }}
               activeDot={{ r: 6, stroke: 'var(--viz-surface)', strokeWidth: 2 }} />
           </LineChart>

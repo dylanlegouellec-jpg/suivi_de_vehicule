@@ -4,6 +4,7 @@ import { formatNumber } from '../lib/format'
 import BackupSection from './BackupSection'
 import AccountSection from './AccountSection'
 import { useAuth } from '../sync/hooks'
+import AppearanceSection from './AppearanceSection'
 
 const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent)
 const isStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia('(display-mode: standalone)').matches
@@ -16,6 +17,7 @@ export default function SettingsScreen({ onManageVehicles, onOpenReminders, onLo
 
   return (
     <div className="space-y-3 desktop:columns-2 desktop:gap-4 desktop:space-y-0 columns-cards">
+      <AppearanceSection />
       <AccountSection onLogin={onLogin} />
       <section className="card">
         <h2 className="font-semibold">Véhicules</h2>
@@ -27,7 +29,7 @@ export default function SettingsScreen({ onManageVehicles, onOpenReminders, onLo
       </section>
       <section className="card space-y-2">
         <h2 className="font-semibold">Stockage et sauvegarde</h2>
-        <p role="alert" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+        <p role="alert" className="rounded-xl bg-warn/15 p-3 text-sm text-fg">
           {user
             ? '⚠️ Vos données sont aussi sur votre compte en ligne. Gardez tout de même une sauvegarde exportée de temps en temps.'
             : '⚠️ Vos données restent uniquement sur cet appareil. iOS peut vider le stockage des sites peu utilisés : exportez régulièrement une sauvegarde ci-dessous, ou créez un compte pour les synchroniser.'}

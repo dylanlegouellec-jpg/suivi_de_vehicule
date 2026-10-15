@@ -85,7 +85,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
           const r = await completeAuth(recovery.user)
           if (r.status === 'conflict') { setRecovery(null); setConflict(r.user) } else onClose()
         })}>Continuer</button>
-        {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+        {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       </div>
     )
 
@@ -94,7 +94,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
     return (
       <div className="narrow space-y-3">
         <h2 className="text-xl font-bold">Données d'un autre compte</h2>
-        <p className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
+        <p className="rounded-xl bg-warn/15 p-3 text-sm text-fg">
           Cet appareil contient des données synchronisées avec un autre compte. Pour votre confidentialité, elles ne seront
           pas ajoutées à <strong>{conflict.email}</strong>. Vous pouvez les effacer de cet appareil (elles restent sur le compte
           d'origine) puis charger celles de ce compte.
@@ -105,7 +105,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
           onClose()
         })}>Effacer cet appareil et continuer</button>
         <button className="btn-secondary w-full" disabled={busy} onClick={() => void handle(async () => { await logout({ wipe: false }); onClose() })}>Annuler et me déconnecter</button>
-        {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
+        {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
       </div>
     )
 
@@ -122,7 +122,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
     return (
       <div className="narrow space-y-3">
         <h2 className="text-xl font-bold">Nouveau mot de passe</h2>
-        <p role="status" className="rounded-xl bg-green-100 p-3 text-sm text-green-900">{info}</p>
+        <p role="status" className="rounded-xl bg-ok/15 p-3 text-sm text-fg">{info}</p>
         <button className="btn-primary w-full" onClick={() => { setInfo(null); setMode('login') }}>Se connecter</button>
       </div>
     )
@@ -148,7 +148,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Fermer">←</button>
         <h2 className="text-xl font-bold">{title}</h2>
       </div>
-      <p className="text-sm text-slate-600 dark:text-slate-400">{intro}</p>
+      <p className="text-sm text-muted">{intro}</p>
       {mode === 'register' && (
         <div><label className="label" htmlFor="a-name">Prénom ou nom affiché</label>
           <input id="a-name" className="field" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></div>
@@ -165,11 +165,11 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
         <div><label className="label" htmlFor="a-pw">{mode === 'reset' || mode === 'reset-link' ? 'Nouveau mot de passe' : 'Mot de passe'}</label>
           <input id="a-pw" type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={mode === 'login' ? 1 : 10}
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
-          {mode !== 'login' && <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">10 caractères minimum.</p>}</div>
+          {mode !== 'login' && <p className="mt-1 text-xs text-muted">10 caractères minimum.</p>}</div>
       )}
-      {error && <p role="alert" className="rounded-xl bg-red-100 p-3 text-sm text-red-900">{error}</p>}
-      {info && <p role="status" className="rounded-xl bg-green-100 p-3 text-sm text-green-900">{info}</p>}
-      {devLink && <p className="break-all rounded-xl bg-slate-100 p-3 text-xs dark:bg-slate-800">Mode test local : <a className="underline" href={devLink}>{devLink}</a></p>}
+      {error && <p role="alert" className="rounded-xl bg-danger/15 p-3 text-sm text-fg">{error}</p>}
+      {info && <p role="status" className="rounded-xl bg-ok/15 p-3 text-sm text-fg">{info}</p>}
+      {devLink && <p className="break-all rounded-xl bg-surface2 p-3 text-xs">Mode test local : <a className="underline" href={devLink}>{devLink}</a></p>}
       {!(mode === 'forgot' && emailReset === false) && (
         <button className="btn-primary w-full" disabled={busy || (mode === 'forgot' && emailReset === null)}>{busy ? 'Patientez…' : submitLabel}</button>
       )}

@@ -151,3 +151,39 @@ describe('groupReminders', () => {
     expect(g.later.map((x) => x.rule.id)).toEqual([3])
   })
 })
+
+import { reminderProgress } from './compute'
+import { dueShort } from './describe'
+
+describe('jauges d’échéance', () => {
+  const rule2 = (o: Partial<ReminderRule> = {}): ReminderRule => ({ id: 1, vehicleId: 1, type: 'vidange', label: 'Vidange', everyMonths: 12, everyKm: 15000, ...o })
+  const run = (rule: ReminderRule, entries: ReminderContext['entries'], mileage = 50000) =>
+    computeReminder(rule, { today: '2025-06-01', vehicle: { mileage, firstRegistration: '2020-03-15' }, entries })
+
+  it('progression : 0 juste après l’entretien, 1 à l’échéance et en retard', () => {
+    const fresh = run(rule2({ everyKm: null }), [{ type: 'vidange', date: '2025-06-01', km: null }])
+    expect(reminderProgress(fresh)).toBeCloseTo(0, 1)
+    const half = run(rule2({ everyKm: null }), [{ type: 'vidange', date: '2024-12-01', km: null }])
+    expect(reminderProgress(half)!).toBeGreaterThan(0.4)
+    expect(reminderProgress(half)!).toBeLessThan(0.6)
+    const late = run(rule2({ everyKm: null }), [{ type: 'vidange', date: '2024-01-01', km: null }])
+    expect(reminderProgress(late)).toBe(1)
+  })
+  it('prend le critère le plus avancé (km plus avancé que la date)', () => {
+    const r = run(rule2(), [{ type: 'vidange', date: '2025-05-01', km: 38000 }]) // 12000/15000 km, 1 mois sur 12
+    expect(reminderProgress(r)!).toBeCloseTo(0.8, 1)
+  })
+  it('inconnu : null', () => {
+    expect(reminderProgress(run(rule2(), []))).toBeNull()
+  })
+
+  it('valeur courte : jours si plus pressants, sinon kilomètres', () => {
+    const days = run(rule2({ everyKm: null }), [{ type: 'vidange', date: '2024-06-20', km: null }])
+    expect(dueShort(days)).toEqual({ value: '19', unit: 'j' })
+    const km = run(rule2({ everyMonths: null }), [{ type: 'vidange', date: '2025-05-01', km: 38000 }])
+    expect(dueShort(km)).toEqual({ value: '3,0k', unit: 'km' })
+    const over = run(rule2({ everyMonths: null }), [{ type: 'vidange', date: '2025-05-01', km: 30000 }])
+    expect(dueShort(over)).toEqual({ value: '−5,0k', unit: 'km' })
+    expect(dueShort(run(rule2(), []))).toBeNull()
+  })
+})
