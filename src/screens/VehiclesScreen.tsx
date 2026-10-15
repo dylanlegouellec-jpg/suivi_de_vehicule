@@ -42,7 +42,7 @@ export default function VehiclesScreen({ onBack, onShare }: { onBack: () => void
       ) : vehicles.length === 0 ? (
         <EmptyState icon="🚗" title="Aucun véhicule" text="Ajoutez votre première voiture, moto ou utilitaire." />
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
           {vehicles.map((v) => (
             <li key={v.id} className="card flex items-center gap-3">
               {v.photo ? <PhotoThumb blob={v.photo} /> : <div aria-hidden className="flex h-14 w-14 items-center justify-center rounded-xl bg-slate-100 text-2xl dark:bg-slate-800">🚗</div>}
@@ -145,7 +145,7 @@ function VehicleForm({ initial, roleOf, onClose, onSaved }: {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Annuler">←</button>
         <h2 className="text-xl font-bold">{initial.id != null ? 'Modifier le véhicule' : 'Nouveau véhicule'}</h2>

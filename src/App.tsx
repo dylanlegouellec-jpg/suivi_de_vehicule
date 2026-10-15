@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { VehicleProvider } from './vehicleContext'
 import Header from './components/Header'
 import TabBar, { type Tab } from './components/TabBar'
+import SideNav from './components/SideNav'
 import HistoryScreen from './screens/HistoryScreen'
 import EntryDetailScreen from './screens/EntryDetailScreen'
 import AddScreen from './screens/AddScreen'
@@ -82,10 +83,18 @@ export default function App() {
 
   return (
     <VehicleProvider>
-      <div className="mx-auto flex h-full max-w-xl flex-col">
-        <Header onManageVehicles={() => setShowVehicles(true)} />
-        <main className="relative z-0 flex-1 overflow-y-auto px-4 pb-10 pt-3">{content}</main>
-        <TabBar current={tab} onChange={go} badges={{ home: badge }} />
+      <div className="flex h-full">
+        <SideNav current={tab} onChange={go} badges={{ home: badge }} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Header onManageVehicles={() => setShowVehicles(true)} />
+          <main
+            className="relative z-0 flex-1 overflow-y-auto pb-10 pt-3 rail:pb-6"
+            style={{ paddingLeft: 'calc(1rem + env(safe-area-inset-left))', paddingRight: 'calc(1rem + env(safe-area-inset-right))' }}
+          >
+            <div className="mx-auto w-full max-w-xl rail:max-w-3xl desktop:max-w-6xl">{content}</div>
+          </main>
+          <TabBar current={tab} onChange={go} badges={{ home: badge }} />
+        </div>
       </div>
     </VehicleProvider>
   )

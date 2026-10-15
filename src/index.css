@@ -24,7 +24,13 @@ input[type='date']::-webkit-date-and-time-value { text-align: left; }
 /* 16 px minimum : évite le zoom automatique d'iOS sur les champs */
 input, select, textarea { font-size: 16px; }
 
+/* Cartes en colonnes (grand écran) : espacement vertical et pas de coupure au milieu d'une carte */
+@media (min-width: 1024px) {
+  .columns-cards > * { margin-bottom: 1rem; break-inside: avoid; }
+}
+
 @layer components {
+  .narrow { @apply mx-auto w-full max-w-xl; }
   .btn { @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 font-medium active:opacity-80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand; }
   .btn-primary { @apply btn bg-brand text-white; }
   .btn-secondary { @apply btn bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100; }

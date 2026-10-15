@@ -76,17 +76,19 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
       ) : view.items.length === 0 ? (
         <EmptyState icon="📊" title="Aucune dépense sur cette période" text="Modifiez le filtre ou ajoutez des factures et des pleins." />
       ) : (
-        <>
-          <section className="grid grid-cols-2 gap-3" aria-label="Indicateurs">
+        <div className="space-y-3 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
+          <section className="grid grid-cols-2 gap-3 desktop:col-span-2" aria-label="Indicateurs">
             <div className="card"><p className="text-sm text-slate-600 dark:text-slate-400">Coût total</p><p className="text-2xl font-bold">{formatEuro(view.total)}</p></div>
             <div className="card"><p className="text-sm text-slate-600 dark:text-slate-400">Coût au km</p>
               <p className="text-2xl font-bold">{view.perKm != null ? formatEuro(view.perKm) : '—'}</p>
               <p className="text-xs text-slate-600 dark:text-slate-400">{view.distance > 0 ? `sur ${formatNumber(view.distance)} km` : 'kilométrage insuffisant'}</p></div>
           </section>
 
-          <Suspense fallback={<p role="status">Chargement du graphique…</p>}>
-            <MonthlyChart data={view.months} />
-          </Suspense>
+          <div className="desktop:col-span-2">
+            <Suspense fallback={<p role="status">Chargement du graphique…</p>}>
+              <MonthlyChart data={view.months} />
+            </Suspense>
+          </div>
 
           <section className="card" aria-label="Coût par an">
             <h3 className="mb-2 font-semibold">Coût par année</h3>
@@ -123,7 +125,7 @@ export default function StatsScreen({ onOpenFuel }: { onOpenFuel: () => void }) 
               Consommation : il faut au moins trois pleins complets avec kilométrage sur la période pour tracer une évolution.
             </p>
           )}
-        </>
+        </div>
       )}
     </div>
   )

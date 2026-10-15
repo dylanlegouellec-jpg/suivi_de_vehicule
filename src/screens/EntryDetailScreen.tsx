@@ -40,7 +40,7 @@ export default function EntryDetailScreen({ id, onBack, onEdit }: { id: number; 
   )
 
   return (
-    <div className="space-y-3">
+    <div className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">{ENTRY_TYPE_LABELS[entry.type]}</h2>

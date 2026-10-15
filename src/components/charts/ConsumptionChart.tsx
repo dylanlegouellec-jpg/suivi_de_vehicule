@@ -10,7 +10,7 @@ export default function ConsumptionChart({ segments }: { segments: ConsumptionSe
   return (
     <section className="card viz-root" aria-label="Évolution de la consommation">
       <h3 className="mb-2 font-semibold">Évolution de la consommation (L/100 km)</h3>
-      <div className="h-56" role="img" aria-label={`Courbe de consommation, ${data.length} points`}>
+      <div className="h-56 desktop:h-72" role="img" aria-label={`Courbe de consommation, ${data.length} points`}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid stroke="var(--viz-grid)" vertical={false} />

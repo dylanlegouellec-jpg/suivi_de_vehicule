@@ -83,7 +83,7 @@ export default function FuelForm({ log, onClose, onSaved }: { log?: FuelLog; onC
   const t = parseDecimal(total)
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Annuler">←</button>
         <h2 className="text-xl font-bold">{log ? 'Modifier le plein' : 'Nouveau plein'}</h2>

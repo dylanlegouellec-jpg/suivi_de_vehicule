@@ -15,7 +15,7 @@ export default function SettingsScreen({ onManageVehicles, onOpenReminders, onLo
   useEffect(() => { void refresh() }, [])
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 desktop:columns-2 desktop:gap-4 desktop:space-y-0 columns-cards">
       <AccountSection onLogin={onLogin} />
       <section className="card">
         <h2 className="font-semibold">Véhicules</h2>

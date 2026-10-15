@@ -1,6 +1,6 @@
 export type Tab = 'home' | 'history' | 'add' | 'stats' | 'settings'
 
-const ITEMS: { id: Tab; label: string; icon: string }[] = [
+export const NAV_ITEMS: { id: Tab; label: string; icon: string }[] = [
   { id: 'home', label: 'Accueil', icon: '🏠' },
   { id: 'history', label: 'Historique', icon: '🧾' },
   { id: 'add', label: 'Ajouter', icon: '＋' },
@@ -12,10 +12,10 @@ export default function TabBar({ current, onChange, badges = {} }: { current: Ta
   return (
     <nav
       aria-label="Navigation principale"
-      className="relative z-20 grid grid-cols-5 overflow-visible border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+      className="relative z-20 grid grid-cols-5 overflow-visible rail:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      {ITEMS.map((it) => {
+      {NAV_ITEMS.map((it) => {
         const isCenter = it.id === 'add'
         const isActive = current === it.id
         return (

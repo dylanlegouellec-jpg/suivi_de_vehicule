@@ -11,7 +11,7 @@ export default function MonthlyChart({ data }: { data: MonthCost[] }) {
   return (
     <section className="card viz-root" aria-label="Coût par mois">
       <h3 className="mb-2 font-semibold">Coût par mois</h3>
-      <div className="h-56" role="img" aria-label={`Histogramme du coût mensuel, ${data.length} mois`}>
+      <div className="h-56 desktop:h-72" role="img" aria-label={`Histogramme du coût mensuel, ${data.length} mois`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 4 }}>
             <CartesianGrid stroke="var(--viz-grid)" vertical={false} />

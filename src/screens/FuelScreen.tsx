@@ -53,6 +53,7 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
               <ul className="list-disc space-y-1 pl-5">{result.warnings.map((w) => <li key={w}>{w}</li>)}</ul>
             </details>
           )}
+          <div className="space-y-3 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
           {result.segments.filter((s) => s.valid).length >= 2 && (
             <Suspense fallback={<p role="status">Chargement du graphique…</p>}>
               <ConsumptionChart segments={result.segments.filter((s) => s.valid)} />
@@ -73,6 +74,7 @@ export default function FuelScreen({ onBack, startNew }: { onBack: () => void; s
               </li>
             ))}
           </ul>
+          </div>
         </>
       )}
     </div>

@@ -22,7 +22,7 @@ export default function AddScreen({ onManual, onFiles, onFuel }: { onManual: () 
   )
 
   return (
-    <div className="space-y-3">
+    <div className="narrow space-y-3">
       <h2 className="text-xl font-bold">Ajouter</h2>
       {active && !canEdit(active.id) && (
         <p role="status" className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">

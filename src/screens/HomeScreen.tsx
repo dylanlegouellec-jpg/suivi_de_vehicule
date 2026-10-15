@@ -28,9 +28,9 @@ export default function HomeScreen({ onManageVehicles, onOpenReminders, onOpenBa
       </EmptyState>
     )
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 desktop:grid desktop:grid-cols-2 desktop:items-start desktop:gap-4 desktop:space-y-0">
       {needBackup && (
-        <button className="w-full rounded-2xl bg-amber-100 p-4 text-left text-amber-900 ring-1 ring-amber-400" onClick={onOpenBackup}>
+        <button className="w-full rounded-2xl desktop:col-span-2 bg-amber-100 p-4 text-left text-amber-900 ring-1 ring-amber-400" onClick={onOpenBackup}>
           <strong>💾 Sauvegarde recommandée</strong>
           <span className="block text-sm">Aucune sauvegarde depuis plus de 30 jours. Touchez pour exporter vos données.</span>
         </button>
@@ -44,7 +44,7 @@ export default function HomeScreen({ onManageVehicles, onOpenReminders, onOpenBa
           {FUEL_LABELS[active.fuel]}{active.mileage != null && ` · ${formatKm(active.mileage)}`}
         </p>
       </section>
-      <section aria-label="À faire" className="space-y-2">
+      <section aria-label="À faire" className="space-y-2 desktop:row-span-2">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">À faire {urgent.length > 0 && <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs text-white">{urgent.length}</span>}</h2>
           <button className="min-h-[44px] px-2 text-sm font-medium text-brand" onClick={onOpenReminders}>Tout voir / gérer</button>

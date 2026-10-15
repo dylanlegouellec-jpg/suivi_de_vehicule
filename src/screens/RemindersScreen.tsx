@@ -71,9 +71,11 @@ export default function RemindersScreen({ onBack, onDone }: {
           groups![key].length > 0 && (
             <section key={key} aria-label={title} className="space-y-2">
               <h3 className="font-semibold">{title} <span className="text-slate-500">({groups![key].length})</span></h3>
-              {groups![key].map((it) => (
-                <ReminderCard key={it.rule.id} item={it} showVehicle={multi} onClick={() => setSelected(it)} />
-              ))}
+              <div className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
+                {groups![key].map((it) => (
+                  <ReminderCard key={it.rule.id} item={it} showVehicle={multi} onClick={() => setSelected(it)} />
+                ))}
+              </div>
             </section>
           ),
         )
@@ -113,7 +115,7 @@ function RuleDetail({ item, onBack, onEdit, onDone, readOnly }: {
   ].filter(Boolean).join(' · ')
 
   return (
-    <div className="space-y-3">
+    <div className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">{rule.label}</h2>
@@ -193,7 +195,7 @@ function RuleForm({ rule, onClose }: { rule?: ReminderRule; onClose: () => void 
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Annuler">←</button>
         <h2 className="text-xl font-bold">{rule ? 'Modifier le rappel' : 'Nouveau rappel'}</h2>

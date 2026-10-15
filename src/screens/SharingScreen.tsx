@@ -46,14 +46,14 @@ export default function SharingScreen({ vehicle, onBack }: { vehicle: Vehicle; o
 
   if (!user)
     return (
-      <div className="space-y-3">
+      <div className="narrow space-y-3">
         <div className="flex items-center gap-2"><button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button><h2 className="text-xl font-bold">Partager</h2></div>
         <p className="card text-sm">Connectez-vous (Réglages → Compte) pour partager ce véhicule.</p>
       </div>
     )
 
   return (
-    <div className="space-y-3">
+    <div className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button className="btn-secondary" onClick={onBack} aria-label="Retour">←</button>
         <h2 className="text-xl font-bold">Partager « {vehicle.name} »</h2>

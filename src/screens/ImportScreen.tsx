@@ -35,7 +35,7 @@ export default function ImportScreen({ files, onDone }: { files: File[]; onDone:
 
   if (!result)
     return (
-      <div className="space-y-4 py-8" role="status">
+      <div className="narrow space-y-4 py-8" role="status">
         <p className="text-center font-semibold">Analyse du document {index + 1} / {files.length}</p>
         <p className="truncate text-center text-sm text-slate-600 dark:text-slate-400">{file.name}</p>
         <ProgressBar value={status.progress} label={status.label} />

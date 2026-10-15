@@ -60,7 +60,7 @@ export default function EntryForm({ entry, defaults, onClose, onSaved }: {
   const submit = (e: FormEvent) => { e.preventDefault(); void save(false) }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Annuler">←</button>
         <h2 className="text-xl font-bold">{entry ? "Modifier l'entrée" : 'Nouvelle entrée'}</h2>

@@ -42,7 +42,7 @@ export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) 
       </div>
 
       {showFilters && (
-        <section className="card space-y-3" aria-label="Filtres">
+        <section className="card space-y-3 desktop:grid desktop:grid-cols-5 desktop:items-end desktop:gap-3 desktop:space-y-0" aria-label="Filtres">
           <div><label className="label" htmlFor="h-vehicle">Véhicule</label>
             <select id="h-vehicle" className="field" value={effectiveVehicle}
               onChange={(e) => setVehicleId(e.target.value === 'all' ? 'all' : Number(e.target.value))}>
@@ -55,7 +55,7 @@ export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) 
               <option value="">Tous les types</option>
               {ENTRY_TYPES.map((t) => <option key={t} value={t}>{ENTRY_TYPE_LABELS[t]}</option>)}
             </select></div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 desktop:col-span-2">
             <div><label className="label" htmlFor="h-from">Du</label>
               <input id="h-from" type="date" className="field" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} /></div>
             <div><label className="label" htmlFor="h-to">Au</label>
@@ -68,7 +68,7 @@ export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) 
               <option value="amount_desc">Montant : décroissant</option>
               <option value="amount_asc">Montant : croissant</option>
             </select></div>
-          {hasFilter && <button className="btn-secondary w-full" onClick={() => setFilters(emptyFilters())}>Réinitialiser</button>}
+          {hasFilter && <button className="btn-secondary w-full desktop:col-span-5" onClick={() => setFilters(emptyFilters())}>Réinitialiser</button>}
         </section>
       )}
 
@@ -87,7 +87,7 @@ export default function HistoryScreen({ onOpen, onAdd }: { onOpen: (id: number) 
           <p className="text-sm text-slate-600 dark:text-slate-400">
             {rows.length} entrée{rows.length > 1 ? 's' : ''} · total {formatEuro(total)}
           </p>
-          <ul className="space-y-2">
+          <ul className="space-y-2 desktop:grid desktop:grid-cols-2 desktop:gap-3 desktop:space-y-0">
             {rows.map((e) => (
               <li key={e.id}>
                 <button className="card flex w-full items-center gap-3 text-left active:opacity-80" onClick={() => onOpen(e.id!)}>

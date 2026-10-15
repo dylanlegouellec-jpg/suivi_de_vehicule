@@ -64,6 +64,14 @@ Sans compte, `npm run dev` suffit (l'API est alors proxifiée vers `localhost:87
 4. Ouvrez-la une fois avec du réseau et faites une première analyse de document : les ressources OCR (~4 Mo)
    sont alors mises en cache et l'OCR fonctionne ensuite hors ligne.
 
+## Affichage : téléphone, tablette, ordinateur
+
+- **Téléphone en portrait** : barre d'onglets en bas.
+- **Tablette, ou téléphone en paysage** : menu latéral compact à gauche (la barre du bas prendrait trop de hauteur) et en-tête réduit.
+- **Ordinateur / grand écran (≥ 1024 px)** : menu latéral étendu, et les écrans de consultation (accueil, historique, statistiques,
+  carburant, rappels, réglages) s'affichent sur deux colonnes ; les formulaires restent en colonne étroite pour rester lisibles.
+- Les marges tiennent compte de l'encoche de l'iPhone en paysage.
+
 ## Logo et icônes
 
 Logo : une voiture blanche sur fond bleu. Sources vectorielles dans `branding/` ; les icônes PNG (écran d'accueil iPhone,

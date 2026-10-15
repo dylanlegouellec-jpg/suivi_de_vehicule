@@ -69,7 +69,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
   // ── Code de récupération : à noter avant de continuer ──
   if (recovery)
     return (
-      <div className="space-y-3">
+      <div className="narrow space-y-3">
         <h2 className="text-xl font-bold">Notez votre code de récupération</h2>
         <p className="text-sm">
           C'est le <strong>seul moyen de récupérer votre compte</strong> si vous oubliez votre mot de passe
@@ -92,7 +92,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
   // ── Données d'un autre compte présentes sur l'appareil ──
   if (conflict)
     return (
-      <div className="space-y-3">
+      <div className="narrow space-y-3">
         <h2 className="text-xl font-bold">Données d'un autre compte</h2>
         <p className="rounded-xl bg-amber-100 p-3 text-sm text-amber-900">
           Cet appareil contient des données synchronisées avec un autre compte. Pour votre confidentialité, elles ne seront
@@ -120,7 +120,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
   // Mot de passe modifié via le lien : on invite à se connecter
   if (mode === 'reset-link' && info)
     return (
-      <div className="space-y-3">
+      <div className="narrow space-y-3">
         <h2 className="text-xl font-bold">Nouveau mot de passe</h2>
         <p role="status" className="rounded-xl bg-green-100 p-3 text-sm text-green-900">{info}</p>
         <button className="btn-primary w-full" onClick={() => { setInfo(null); setMode('login') }}>Se connecter</button>
@@ -143,7 +143,7 @@ export default function AuthScreen({ onClose, initialMode = 'login', resetToken,
   const go = (m: Mode) => { setMode(m); setError(null); setInfo(null); setDevLink(null) }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="narrow space-y-3">
       <div className="flex items-center gap-2">
         <button type="button" className="btn-secondary" onClick={onClose} aria-label="Fermer">←</button>
         <h2 className="text-xl font-bold">{title}</h2>
